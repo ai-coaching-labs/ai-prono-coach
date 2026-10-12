@@ -1,0 +1,71 @@
+[language]
+documents = "fr"
+responses = "auto"
+
+[agents]
+enabled = ["coach", "match-analyst", "market-analyst", "risk-manager", "performance-analyst", "bookmaker-expert", "sports-journalist", "lineup-analyst"]
+strategy = "adaptive"
+cache_minutes = 30
+
+[tracking]
+enabled = true
+interval_seconds = 300
+# Uniquement les résultats publics des matchs suivis, après leur coup d'envoi.
+auto_refresh_results = true
+result_refresh_minutes = 60
+
+[evaluation]
+leagues = ["F1", "F2", "E0"]
+
+[europe]
+# Archives propres à chaque coupe ; les effectifs anciens limitent leur pertinence.
+history_years = 10
+max_history_days = 3653
+
+[domestic]
+history_years = 5
+
+[selection]
+default_count = 3
+min_pick_probability = 0.50
+min_probability_gap = 0.10
+min_recent_matches_per_team = 8
+max_team_history_age_days = 180
+
+[form]
+# Contexte national des coupes UEFA ; ne modifie pas la baseline européenne.
+max_history_days = 180
+stale_after_days = 21
+
+[sport]
+primary = "football"
+market = "1x2"
+
+[coaching]
+timezone = "Europe/Paris"
+style = "direct"
+verbosity = "concise"
+
+[model]
+min_matches_per_team = 8
+prior_matches = 5
+max_history_days = 1826
+
+[data]
+source = "manual"
+sport_key = "soccer_france_ligue_one"
+regions = "eu"
+max_odds_age_hours = 6
+
+[paper]
+starting_balance = 100.0
+unit = 1.0
+max_open_exposure = 5.0
+
+[llm]
+# "none" ou "openai-compatible" (OpenRouter, Ollama, vLLM...).
+# Le chat n'envoie que les statistiques agrégées + la question explicite.
+backend = "none"
+base_url = "http://127.0.0.1:11434/v1"
+model = ""
+api_key_env = "PRONO_LLM_API_KEY"

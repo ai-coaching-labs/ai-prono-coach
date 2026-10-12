@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+PRONO_ENGINE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+exec "$PRONO_ENGINE/.venv/bin/python" -m prono.cli "$@"
