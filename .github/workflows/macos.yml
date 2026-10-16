@@ -50,7 +50,7 @@ jobs:
           app="${apps[0]}"
           python .github/scripts/verify_macos.py "$app"
           for arch in arm64 x86_64; do
-            lipo -verify_arch "$arch" "$app/Contents/MacOS/AI Prono Coach"
+            lipo "$app/Contents/MacOS/AI Prono Coach" -verify_arch "$arch"
           done
           codesign --verify --deep --strict "$app"
           codesign --verify --strict "dist/AI-Prono-Coach-$VERSION.dmg"
