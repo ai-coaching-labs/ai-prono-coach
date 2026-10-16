@@ -100,7 +100,7 @@ class PronosTests(unittest.TestCase):
         self.assertIn('1 prono(s) calculé(s)',body)
         self.assertIn('Prono du modèle',body)
         self.assertIn('Test Book : 2.00 / 3.50 / 4.00',body)
-        self.assertIn('Simulation fictive : abstention',body)
+        self.assertIn('Simulation fictive : abstention',html.unescape(body))
         self.assertNotIn('Espérance théorique :',body)
 
     def test_fresh_selection_stale_future_unknown_and_limit(self):
