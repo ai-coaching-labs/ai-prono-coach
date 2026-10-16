@@ -64,7 +64,7 @@ class EuropeTests(unittest.TestCase):
     def test_separate_calendar_survives_domestic_refresh_and_failed_europe_refresh(self):
         initial=self.parsed();self.ws.path('data').mkdir();self.ws.path('data/europe-watch.json').write_text(json.dumps(initial))
         csv='Div,Date,Time,HomeTeam,AwayTeam,B365H,B365D,B365A\nF1,13/10/2026,20:00,A,B,2,3,4\n'
-        with patch('prono.market_watch.fetch_csv',return_value=csv),patch('prono.europe.sync_europe',return_value={'matches':0,'offers':0}):sync_markets(self.ws)
+        with patch('prono.market_watch.fetch_csv',return_value=csv),patch('prono.europe.sync_europe',return_value={'matches':0,'offers':0}):sync_markets(self.ws,include_domestic=False)
         self.assertEqual(len(public_calendar(self.ws)['matches']),2)
         with patch('prono.europe.archive',side_effect=ValueError('indisponible')):
             result=sync_europe(self.ws,['UCL'])
@@ -90,6 +90,36 @@ class EuropeTests(unittest.TestCase):
         from prono.chat import coach_facts
         with patch('prono.pronos.selections',return_value=result):facts=coach_facts(self.ws,'UCL','next3')
         self.assertEqual(facts['matches'][0]['sample_period'],row['model']['sample_period'])
+
+    def test_history_name_case_change_preserves_original_row_and_knowledge(self):
+        child=league_workspace(self.ws,'UCL',create=True)
+        part=self.parsed(self.finished())
+        with patch('prono.europe.archive',return_value=part):
+            sync_europe_history(child,['2627'])
+        path=child.path('data/history.csv');original=path.read_bytes()
+        changed=copy.deepcopy(part)
+        changed['results'][0]['home']=part['results'][0]['home'].upper()
+        changed['results'][0]['away']=part['results'][0]['away'].lower()
+        changed['results'][0]['result_known_at']='2026-10-14T12:00:00+00:00'
+        with patch('prono.europe.archive',return_value=changed):
+            self.assertEqual(sync_europe_history(child,['2627'])['added'],0)
+        self.assertEqual(path.read_bytes(),original)
+
+    def test_history_case_change_does_not_hide_real_corrections(self):
+        child=league_workspace(self.ws,'UCL',create=True)
+        part=self.parsed(self.finished())
+        with patch('prono.europe.archive',return_value=part):
+            sync_europe_history(child,['2627'])
+        path=child.path('data/history.csv');original=path.read_bytes()
+        for field,value in [('home','Another club'),('away','Another club'),
+                            ('kickoff','2026-10-12T17:45:00+00:00'),('home_goals',9),('away_goals',9)]:
+            with self.subTest(field=field):
+                changed=copy.deepcopy(part)
+                changed['results'][0]['home']=part['results'][0]['home'].upper()
+                changed['results'][0][field]=value
+                with patch('prono.europe.archive',return_value=changed),self.assertRaisesRegex(ValueError,field):
+                    sync_europe_history(child,['2627'])
+                self.assertEqual(path.read_bytes(),original)
 
     def test_history_policy_is_ten_years_for_europe_and_does_not_predate_conference(self):
         self.assertEqual(history_seasons(self.ws,'UCL',self.now)[0],'1617')

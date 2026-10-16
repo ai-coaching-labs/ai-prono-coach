@@ -7,3 +7,10 @@ Ne pas relever les limites pour permettre un nouveau pari. Si l'utilisateur veut
 proposer une pause et un bilan, pas un pronostic ni une augmentation des unités.
 Le budget ne fait pas d'une probabilité incertaine une bonne décision.
 Retour au coach : blocages factuels et règle correspondante, sans discours moralisateur.
+
+Pendant une consultation pré-match, ce rôle travaille en aveugle aux prévisions Poisson,
+comme tous les autres rôles et le coach. Ne pas demander ni reconstituer le choix,
+les probabilités, les scores, le BTTS ou l’espérance du modèle. Les statistiques
+observées et les sources restent utilisables. L’application compare les avis au
+modèle après le verdict. Une lecture de bilan historique explicitement demandée
+reste distincte d’une nouvelle prédiction.

@@ -6,8 +6,10 @@ import tomllib
 from datetime import datetime, timezone
 from pathlib import Path
 
+
 def utcnow():
     return datetime.now(timezone.utc)
+
 
 def timestamp(value):
     dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
@@ -15,18 +17,26 @@ def timestamp(value):
         raise ValueError("Horodatage avec fuseau requis (ex. 2026-10-10T18:00:00Z).")
     return dt.astimezone(timezone.utc)
 
+
 def number(value, minimum=None, maximum=None):
     import math
+
     n = float(value)
-    if not math.isfinite(n) or (minimum is not None and n < minimum) or (maximum is not None and n > maximum):
+    if (
+        not math.isfinite(n)
+        or (minimum is not None and n < minimum)
+        or (maximum is not None and n > maximum)
+    ):
         raise ValueError(f"Valeur numérique invalide : {value}")
     return n
+
 
 def merge(a, b):
     out = dict(a)
     for key, value in b.items():
         out[key] = merge(out.get(key, {}), value) if isinstance(value, dict) else value
     return out
+
 
 def atomic_write(path, text):
     path = Path(path)
@@ -40,22 +50,33 @@ def atomic_write(path, text):
         if os.path.exists(name):
             os.unlink(name)
 
+
 def write_record(path, kind, payload, prose=""):
     record = {"schema_version": 1, "kind": kind, **payload}
-    atomic_write(path, f"# {kind}\n\n```prono\n{json.dumps(record, ensure_ascii=False, indent=2, allow_nan=False)}\n```\n\n{prose}\n")
+    atomic_write(
+        path,
+        f"# {kind}\n\n```prono\n{json.dumps(record, ensure_ascii=False, indent=2, allow_nan=False)}\n```\n\n{prose}\n",
+    )
+
 
 def write_record_once(path, kind, payload):
     """Création atomique exclusive : un pronostic existant ne peut être remplacé."""
-    path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
-    record={'schema_version':1,'kind':kind,**payload}
-    text=f'# {kind}\n\n```prono\n{json.dumps(record,ensure_ascii=False,indent=2,allow_nan=False)}\n```\n'
-    fd,temp=tempfile.mkstemp(dir=path.parent,prefix='.prono-')
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    record = {"schema_version": 1, "kind": kind, **payload}
+    text = f"# {kind}\n\n```prono\n{json.dumps(record,ensure_ascii=False,indent=2,allow_nan=False)}\n```\n"
+    fd, temp = tempfile.mkstemp(dir=path.parent, prefix=".prono-")
     try:
-        with os.fdopen(fd,'w',encoding='utf-8') as stream:stream.write(text)
-        try:os.link(temp,path)
-        except FileExistsError:return False
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            stream.write(text)
+        try:
+            os.link(temp, path)
+        except FileExistsError:
+            return False
         return True
-    finally:os.unlink(temp)
+    finally:
+        os.unlink(temp)
+
 
 def read_record(path):
     text = Path(path).read_text(encoding="utf-8")
@@ -67,12 +88,15 @@ def read_record(path):
         raise ValueError("Version du contrat inconnue.")
     return record
 
+
 class Workspace:
     def __init__(self, root):
         self.root = Path(root).resolve()
         config_path = self.root / "config/workspace.toml"
         if not config_path.exists():
-            raise ValueError("Workspace absent : exécuter ./install.sh ou prono init depuis le projet.")
+            raise ValueError(
+                "Workspace absent : exécuter ./install.sh ou prono init depuis le projet."
+            )
         self.config = tomllib.loads(config_path.read_text())
         user = self.root / "config/workspace.user.toml"
         if user.exists():
@@ -82,7 +106,11 @@ class Workspace:
         number(paper["unit"], 0.01)
         number(paper["max_open_exposure"], 0.01)
         model = self.config["model"]
-        if int(model["min_matches_per_team"]) < 1 or int(model["prior_matches"]) < 1 or int(model["max_history_days"]) < 1:
+        if (
+            int(model["min_matches_per_team"]) < 1
+            or int(model["prior_matches"]) < 1
+            or int(model["max_history_days"]) < 1
+        ):
             raise ValueError("Paramètres du modèle invalides.")
         number(self.config["data"]["max_odds_age_hours"], 0.01)
 

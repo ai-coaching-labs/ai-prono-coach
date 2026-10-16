@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Parler au coach</title>
+    {icon_link}
+    <style>
+      {css}
+    </style>
+  </head>
+  <body>
+    <main data-token="{token}">
+      <header>
+        <a id="back-pronos" href="/?tab=pronos">← Pronos</a
+        ><span>SIMULATIONS FICTIVES</span>
+      </header>
+      <h1>Parler au coach</h1>
+      <p>
+        Choisissez une période et posez votre question, ou demandez l’analyse
+        des spécialistes.
+      </p>
+      <details id="analysis-history" class="settings-panel">
+        <summary>Mes analyses enregistrées</summary>
+        <p>Retrouvez les verdicts et avis des spécialistes, avec leurs données d’origine. La lecture ne relance pas l’IA.</p>
+        <form id="history-search" class="history-search">
+          <label>Rechercher une équipe<input id="history-query" type="search" maxlength="200" placeholder="Rennes, Arsenal…" /></label>
+          <button type="submit">Rechercher</button>
+        </form>
+        <p id="history-status" role="status"></p>
+        <div id="history-list" class="history-list"></div>
+        <div class="actions">
+          <button id="history-prev" type="button" hidden>Précédentes</button>
+          <button id="history-next" type="button" hidden>Suivantes</button>
+        </div>
+      </details>
+      <div class="settings">
+        <label
+          >Compétition<select id="league">
+            <option value="all">Toutes les compétitions</option>
+          </select></label
+        ><label
+          >Période<select id="period">
+            <option value="today">Aujourd’hui</option>
+            <option value="next3">Demain à J+3</option>
+          </select></label
+        ><label
+          >Match<select id="match">
+            <option value="">Sélection automatique classée</option>
+          </select></label
+        >
+      </div>
+      <section id="manual-selection" class="settings-panel" hidden>
+        <h3>Choisir les matchs à approfondir</h3>
+        <p>Cochez de 1 à 5 matchs. Les critères du tri automatique restent visibles.</p>
+        <div id="manual-matches" class="manual-matches"></div>
+        <p id="manual-count" role="status"></p>
+      </section>
+      <details id="coach-settings" class="settings-panel">
+        <summary>Réglages du coach et des spécialistes</summary>
+        <div class="settings">
+          <label
+            >Coach<select id="provider">
+              <option value="local">Local · Ollama</option>
+              <option value="claude">Claude · Claude Code</option>
+            </select></label
+          ><label id="model-label"
+            >Modèle local<select id="model">
+              <option>Chargement…</option>
+            </select></label
+          ><label
+            >Analyse<select id="mode">
+              <option value="coach">Coach · discussion</option>
+              <option value="team">Équipe IA · spécialistes</option>
+            </select></label
+          >
+        </div>
+        <div class="settings">
+          <label
+            >Nombre de matchs<select id="selection-count">
+              <option value="1">1 match</option>
+              <option value="2">2 matchs</option>
+              <option value="3" selected>3 matchs</option>
+              <option value="4">4 matchs</option>
+              <option value="5">5 matchs</option>
+            </select></label
+          ><label
+            >Interventions<select id="strategy">
+              <option value="adaptive">Essentielle · 3 rôles</option>
+              <option value="full">Équipe complète · 8 rôles maximum</option>
+            </select></label
+          ><label
+            >Actualité<input type="checkbox" id="force" />Rechercher à
+            nouveau</label
+          >
+        </div>
+        <p>
+          Local utilise les données chargées sans web. Claude peut rechercher
+          l’actualité. L’analyse approfondie demande une nouvelle recherche ; les autres consultations peuvent réutiliser les avis récents avec leur date.
+        </p>
+      </details>
+      <p class="notice" id="notice">
+        À votre demande, le message et les faits sportifs sont transmis au coach
+        choisi. L’équipe essentielle utilise 3 appels au maximum sans renfort ;
+        l’équipe complète peut en utiliser 8 et consommer le quota Claude.
+        Cotes publiques indicatives ; probabilités non
+        calibrées.
+      </p>
+      <details class="settings-panel">
+        <summary>Voir la sélection et les critères avant l’analyse</summary>
+        <section
+          id="selection-preview"
+          class="selection-panel"
+          aria-live="polite"
+        ></section>
+      </details>
+      <div class="actions">
+        <button id="prepare">Analyse approfondie</button
+        ><button id="pronos">Voir les pronos</button>
+      </div>
+      <section id="team-trace" hidden aria-live="polite"></section>
+      <div id="messages" aria-live="polite">
+        <div class="bubble"><small>COACH</small>Sur quel match veux-tu faire le point ? Je peux aussi expliquer les probabilités ou les raisons d’abstention.</div>
+      </div>
+      <form id="chat" class="composer">
+        <label for="question"
+          >Votre message<textarea
+            id="question"
+            maxlength="6000"
+            placeholder="Pourquoi ce prono ? Que manque-t-il pour analyser ce match ?"
+            required
+          ></textarea></label
+        ><button id="send">Envoyer</button>
+      </form>
+      <p id="status" role="status"></p>
+      <details class="settings-panel">
+        <summary>Actualiser les données</summary>
+        <p>
+          Ces boutons lancent une collecte publique. Les historiques concernent
+          la compétition choisie ; le calendrier couvre le catalogue.
+        </p>
+        <div class="actions">
+          <button id="markets">Actualiser le calendrier et les cotes</button
+          ><button id="history">Actualiser les historiques</button>
+          <button id="xg">Actualiser les xG · Understat</button>
+        </div>
+        <p>Understat : cinq grands championnats, saison courante et précédente. Les xG enrichissent l’analyse sans modifier le modèle. Les saisons plus anciennes peuvent être importées séparément.</p>
+      </details>
+    </main>
+    <script src="/chat.js" defer></script>
+  </body>
+</html>

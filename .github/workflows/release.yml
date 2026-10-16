@@ -1,0 +1,89 @@
+name: Build and release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: delivery-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate-ref:
+    name: Validate delivery ref
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Require main or a matching version tag
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [[ "$REF_TYPE" = tag ]]; then
+            python .github/scripts/check_version.py --tag "$REF_NAME"
+          else
+            test "$REF_NAME" = main
+            python .github/scripts/check_version.py
+          fi
+
+  checks:
+    name: Validate
+    needs: validate-ref
+    uses: ./.github/workflows/ci.yml
+
+  macos:
+    name: Build
+    needs: checks
+    uses: ./.github/workflows/macos.yml
+
+  publish:
+    name: Publish GitHub release
+    if: ${{ github.ref_type == 'tag' }}
+    needs: macos
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: ${{ github.ref_name }}
+      VERSION: ${{ needs.macos.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: macos-dmg
+          path: release-dist
+      - name: Verify downloaded assets
+        working-directory: release-dist
+        run: |
+          test -f "AI-Prono-Coach-$VERSION.dmg"
+          sha256sum --check SHA256SUMS
+      - name: Create release with DMG and checksums
+        run: |
+          cat > "$RUNNER_TEMP/release-notes.md" <<'NOTES'
+          Application macOS 13+ universelle (Apple Silicon et Intel).
+          Télécharger le DMG et glisser l’application dans Applications.
+          Python 3.11+ reste nécessaire. Le coach IA nécessite Ollama ou Claude Code configuré.
+
+          Signature locale ad hoc, sans notarisation Apple : macOS peut demander une autorisation d’ouverture.
+          Le fichier SHA256SUMS permet de vérifier le téléchargement.
+          NOTES
+          gh release create "$RELEASE_TAG" \
+            "release-dist/AI-Prono-Coach-$VERSION.dmg" \
+            release-dist/SHA256SUMS \
+            --verify-tag \
+            --title "AI Prono Coach $VERSION" \
+            --generate-notes \
+            --notes-file "$RUNNER_TEMP/release-notes.md"

@@ -27,6 +27,38 @@ class ShortlistTests(unittest.TestCase):
         root=Path(self.temp.name);(root/'config').mkdir();shutil.copy(ROOT/'config/workspace.toml',root/'config/workspace.toml')
         self.ws=Workspace(root)
 
+    def test_manual_batch_keeps_exact_scope_before_display_limit(self):
+        rows = [row(i, .55) for i in range(40)] + [row('weak', .49)]
+        original = copy.deepcopy(rows)
+        with patch('prono.pronos.selections', return_value={'created_at': NOW, 'matches': rows, 'notice': 'Test'}):
+            facts = coach_facts(self.ws, 'UCL', 'next3', event_ids=['39', 'weak'])
+            context = prepare_context(self.ws, 'UCL', 'next3', event_ids=['39', 'weak'])
+        self.assertEqual({r['event_id'] for r in context['matches']}, {'39', 'weak'})
+        self.assertEqual({r['event_id'] for r in facts['matches']}, {'39', 'weak'})
+        self.assertEqual(facts['selection']['mode'], 'manual')
+        self.assertEqual(facts['selection']['requested'], 2)
+        audit = next(r for r in facts['selection']['rows'] if r['event_id'] == 'weak')
+        self.assertTrue(audit['selected'])
+        self.assertTrue(audit['exclusions'])
+        self.assertEqual(rows, original)
+
+    def test_manual_batch_invalid_scope_is_refused(self):
+        for ids in ([], ['x'] * 2, list('abcdef'), 'x', [42], ['missing']):
+            with self.subTest(ids=ids), self.assertRaises(ValueError):
+                rank_matches([row('x')], {}, NOW, event_ids=ids)
+        with self.assertRaises(ValueError):
+            rank_matches([row('x')], {}, NOW, event_id='x', event_ids=['x'])
+        with self.assertRaisesRegex(ValueError, 'ambigu'):
+            duplicate = row('x'); duplicate['division'] = 'F1'
+            rank_matches([row('x'), duplicate], {}, NOW, event_ids=['x'])
+
+    def test_manual_batch_rejects_kickoff_at_or_before_analysis(self):
+        for kickoff in (NOW, '2026-10-12T09:59:59Z'):
+            with self.subTest(kickoff=kickoff), self.assertRaisesRegex(ValueError, 'commencé'):
+                rank_matches([row('x', kickoff=kickoff)], {}, NOW, event_ids=['x'])
+        _, report = rank_matches([row('x', kickoff='2026-10-12T10:00:01Z')], {}, NOW, event_ids=['x'])
+        self.assertEqual(report['selected'], 1)
+
     def test_later_stronger_match_is_selected_beyond_the_old_thirty_match_cutoff(self):
         rows=[row(i,.55,kickoff='2026-10-13T16:45:00Z') for i in range(39)]+[row('best',.80)]
         facts={'created_at':NOW,'matches':rows,'notice':'Test'}
@@ -57,12 +89,12 @@ class ShortlistTests(unittest.TestCase):
         self.assertEqual(ordered[0]['fixture']['event_id'],'highest')
         self.assertTrue(all(a['expected_return_per_unit'] is None for a in report['rows']))
 
-    def test_verified_positive_expectation_is_a_separate_priority_group(self):
+    def test_verified_positive_expectation_does_not_change_priority(self):
         a=row('observation',.8);b=row('verified',.6)
         b['status']='candidate';b['fixture']['quoted_at']=NOW;b['comparison']={'expected_return_per_unit':.2}
         ordered,report=rank_matches([a,b],{},NOW,1)
-        self.assertEqual(ordered[0]['fixture']['event_id'],'verified')
-        self.assertEqual(report['rows'][0]['category'],'paper_candidate')
+        self.assertEqual(ordered[0]['fixture']['event_id'],'observation')
+        self.assertEqual(next(r for r in report['rows'] if r['event_id']=='verified')['category'],'paper_candidate')
         b['status']='abstention'
         self.assertEqual(rank_matches([a,b],{},NOW,1)[0][0]['fixture']['event_id'],'observation')
 
@@ -103,7 +135,7 @@ class ShortlistTests(unittest.TestCase):
         with patch('prono.pronos.selections',return_value={'created_at':NOW,'matches':rows,'notice':'SYNTHÉTIQUE'}),patch('prono.team.claude_path',return_value='/test/claude'),patch('prono.team.call_model',side_effect=adapter) as calls:
             result=run_team(self.ws,'Prépare mes pronos','claude','',league='UCL',period='next3',strategy='adaptive',selection_count=2)
         self.assertEqual(result['selection']['scanned'],40);self.assertEqual(len(result['scope']),2)
-        self.assertEqual(result['scope'][0]['event_id'],'last');self.assertEqual(calls.call_count,5)
+        self.assertEqual(result['scope'][0]['event_id'],'last');self.assertEqual(calls.call_count,3)
         record=read_record(self.ws.path('analyses/team-'+result['run_id']+'.md'))
         self.assertEqual(record['facts']['selection'],receipts(self.ws,result['run_id'])[0]['selection'])
         self.assertEqual(TeamJobs(self.ws).get(result['run_id'])['result']['selection'],result['selection'])

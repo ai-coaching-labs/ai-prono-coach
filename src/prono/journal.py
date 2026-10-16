@@ -3,6 +3,7 @@ from .analysis import analyze
 from .workspace import write_record, number, utcnow, timestamp
 from .model import OUTCOMES
 
+
 def journal(ws):
     entries = ws.records("journal")
     ids = set()
@@ -10,15 +11,23 @@ def journal(ws):
         if r.get("kind") != "paper_bet" or r.get("mode") != "paper" or r["id"] in ids:
             raise ValueError("Journal incohérent.")
         ids.add(r["id"])
-        number(r["stake"], .000001)
+        number(r["stake"], 0.000001)
         number(r["odds"], 1.000001)
         if r["outcome"] not in OUTCOMES or r["status"] not in ("open", "settled"):
             raise ValueError("État du journal invalide.")
         if r["status"] == "settled":
-            expected = r["stake"] * (r["odds"]-1) if r["result"] == "win" else -r["stake"] if r["result"] == "loss" else 0
-            if r["result"] not in ("win", "loss", "void") or abs(expected-r["pnl"]) > 1e-8:
+            expected = (
+                r["stake"] * (r["odds"] - 1)
+                if r["result"] == "win"
+                else -r["stake"] if r["result"] == "loss" else 0
+            )
+            if (
+                r["result"] not in ("win", "loss", "void")
+                or abs(expected - r["pnl"]) > 1e-8
+            ):
                 raise ValueError("Résultat du journal incohérent.")
     return entries
+
 
 def summary(ws):
     entries = sorted(journal(ws), key=lambda r: r.get("settled_at", r["created_at"]))
@@ -39,34 +48,58 @@ def summary(ws):
         g["count"] += 1
         g["pnl"] += r["pnl"]
     exposure = sum(r["stake"] for r in opened)
-    return {"mode": "paper", "initial_balance": initial, "balance": initial+pnl,
-            "available_balance": initial+pnl-exposure, "open_exposure": exposure,
-            "open_count": len(opened), "settled_count": len(settled), "net_pnl": pnl,
-            "roi": pnl/total_staked if total_staked else None, "max_drawdown_units": dd,
-            "by_outcome": groups,
-            "notice": "Simulation fictive, sans argent réel. Le ROI observé ne démontre pas un avantage futur."}
+    return {
+        "mode": "paper",
+        "initial_balance": initial,
+        "balance": initial + pnl,
+        "available_balance": initial + pnl - exposure,
+        "open_exposure": exposure,
+        "open_count": len(opened),
+        "settled_count": len(settled),
+        "net_pnl": pnl,
+        "roi": pnl / total_staked if total_staked else None,
+        "max_drawdown_units": dd,
+        "by_outcome": groups,
+        "notice": "Simulation fictive, sans argent réel. Le ROI observé ne démontre pas un avantage futur.",
+    }
+
 
 def add_paper(ws, event_id, outcome, note=""):
     if outcome not in OUTCOMES:
         raise ValueError("Issue attendue : home, draw ou away.")
     result = analyze(ws, event_id)
     if result["status"] != "analysis_only":
-        raise ValueError("Simulation refusée : cotes périmées ou historique insuffisant.")
+        raise ValueError(
+            "Simulation refusée : cotes périmées ou historique insuffisant."
+        )
     if any(r["event_id"] == event_id for r in journal(ws)):
         raise ValueError("Un pari fictif existe déjà pour ce match.")
     stats = summary(ws)
     stake = float(ws.config["paper"]["unit"])
-    if stats["available_balance"] < stake or stats["open_exposure"]+stake > float(ws.config["paper"]["max_open_exposure"]):
+    if stats["available_balance"] < stake or stats["open_exposure"] + stake > float(
+        ws.config["paper"]["max_open_exposure"]
+    ):
         raise ValueError("Limite de simulation atteinte.")
     ident = uuid4().hex
-    record = {"id": ident, "mode": "paper", "created_at": utcnow().isoformat(),
-              "event_id": event_id, "kickoff": result["fixture"]["kickoff"], "outcome": outcome,
-              "stake": stake, "odds": result["fixture"]["odds"][outcome],
-              "quoted_at": result["fixture"]["quoted_at"], "source": result["fixture"]["source"],
-              "bookmaker": result["fixture"]["bookmaker"], "status": "open", "note": note,
-              "forecast": result["model"]}
+    record = {
+        "id": ident,
+        "mode": "paper",
+        "created_at": utcnow().isoformat(),
+        "event_id": event_id,
+        "kickoff": result["fixture"]["kickoff"],
+        "outcome": outcome,
+        "stake": stake,
+        "odds": result["fixture"]["odds"][outcome],
+        "quoted_at": result["fixture"]["quoted_at"],
+        "source": result["fixture"]["source"],
+        "bookmaker": result["fixture"]["bookmaker"],
+        "status": "open",
+        "note": note,
+        "forecast": result["model"],
+    }
     write_record(ws.path(f"journal/{ident}.md"), "paper_bet", record)
     return record
+
 
 def settle(ws, ident, result):
     if result not in ("win", "loss", "void"):
@@ -79,7 +112,20 @@ def settle(ws, ident, result):
         raise ValueError("Résultat déjà enregistré : aucune modification silencieuse.")
     if result != "void" and utcnow() < timestamp(r["kickoff"]):
         raise ValueError("Impossible d'enregistrer un résultat avant le coup d'envoi.")
-    r.update(status="settled", result=result, settled_at=utcnow().isoformat(),
-             pnl=r["stake"]*(r["odds"]-1) if result == "win" else -r["stake"] if result == "loss" else 0)
-    write_record(ws.path(f"journal/{ident}.md"), "paper_bet", r, "Résultat saisi manuellement ; non vérifié auprès d'un fournisseur sportif.")
+    r.update(
+        status="settled",
+        result=result,
+        settled_at=utcnow().isoformat(),
+        pnl=(
+            r["stake"] * (r["odds"] - 1)
+            if result == "win"
+            else -r["stake"] if result == "loss" else 0
+        ),
+    )
+    write_record(
+        ws.path(f"journal/{ident}.md"),
+        "paper_bet",
+        r,
+        "Résultat saisi manuellement ; non vérifié auprès d'un fournisseur sportif.",
+    )
     return r

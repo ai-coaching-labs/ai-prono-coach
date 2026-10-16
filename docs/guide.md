@@ -1,6 +1,6 @@
 # Guide détaillé
 
-[Retour au démarrage rapide](../README.md) · [Évolutions](evolutions.md)
+[Retour au démarrage rapide](../README.md)
 
 ## Démarrer en local
 
@@ -55,13 +55,16 @@ l'analyste effectif vérifie la portée pour le match. L'expert bookmaker contr�
 captures et ne déduit pas un mouvement d'une seule cote.
 
 Dans le chat intégré, choisir Local ou Claude, une période et éventuellement un match,
-puis **Analyser avec les spécialistes**. Le serveur consulte chaque rôle activé
-dans un appel distinct au modèle choisi, puis le coach synthétise les avis. L’avancement,
+puis **Analyser avec les spécialistes**. L’équipe essentielle consulte le journaliste/effectifs,
+l’analyste sportif puis le coach. Les renforts interviennent sur demande précise ;
+l’équipe complète consulte tous les rôles activés. Chaque rôle utilise un appel distinct
+au modèle choisi, puis le coach synthétise les avis. L’avancement,
 les erreurs et les rapports sont visibles ; la consultation est archivée dans
 `analyses/team-<identifiant>.md`. Une demande explicite de consultation peut aussi
 déclencher l’équipe. Une question sur une consultation passée ne la relance pas.
 La recherche est limitée à un match choisi ou à 1 à 5 rencontres issues du pré-tri Python de toute la période.
-Jusqu’à huit appels utilisent le quota du modèle choisi. Les spécialistes locaux
+L’équipe essentielle utilise jusqu’à trois appels ; le mode complet jusqu’à huit.
+Les avis réutilisés évitent de nouveaux appels spécialisés. Ces appels utilisent le quota du modèle choisi. Les spécialistes locaux
 n’ont pas accès au web ; sous Claude, seuls les rôles bookmaker, journaliste et
 effectifs disposent de WebSearch/WebFetch. Aucun modèle n’est appelé à l’ouverture.
 
@@ -320,13 +323,13 @@ bash -n install.sh scripts/prono
 
 Les tests couvrent notamment les dates de connaissance, cotes périmées, probabilités,
 annulations, solde et exposition, doublons, normalisation du fournisseur et échappement HTML.
-La CI est préparée pour Python 3.11, 3.12 et 3.13 ; seules les versions exécutées lors de
-la livraison sont annoncées dans `docs/validation.md`.
+La CI est configurée pour Python 3.11, 3.12, 3.13 et 3.14. Une exécution locale
+ne valide que l’environnement effectivement testé ; consulter les résultats de la CI pour les autres versions.
 
 Licence MIT. Les données utilisateurs ne doivent pas être publiées avec le moteur.
 
 
-### Version 0.3 — suivi et comparaison des modèles
+## Suivi et comparaison des modèles
 
 **Mes pronos suivis** conserve les prévisions avant match dans des blocs `forecast`
 sous `analyses/`. Les résultats sourcés sont des blocs `forecast_outcome` séparés :
@@ -374,3 +377,39 @@ avec leur date et leur origine visibles. **Rechercher à nouveau** ignore ce cac
 Les faits ou prompts modifiés invalident le cache. Le chat montre les appels, avis
 réutilisés, durée et tokens lorsqu'ils sont rapportés par le fournisseur ; aucun coût
 ou quota restant n'est estimé.
+
+
+## Sélection des matchs à approfondir
+
+Python examine
+toute la période et trie avant la limite de 30 fiches détaillées du chat. Par défaut, il
+exige un choix à au moins 50 %, un écart d’au moins 10 points avec la deuxième issue,
+au moins huit matchs par équipe sur les deux dernières années et un dernier résultat
+historique dans les 180 derniers jours. Ces seuils de pré-tri sont configurables dans
+`[selection]` et ne constituent pas une validation du modèle.
+
+Les candidats fictifs avec cotes vérifiées et espérance théorique positive passent
+d’abord, par espérance décroissante. Les autres rencontres admissibles sont des
+observations, triées par probabilité Python, écart puis échantillon récent. L’heure ne
+sert qu’à départager. Les cotes indicatives n’autorisent aucun classement par rentabilité.
+
+Le chat affiche la liste proposée, les critères et les exclusions avant de lancer les
+agents. On peut demander de un à cinq matchs ; une liste insuffisante n’est pas remplie
+avec des choix faibles. Un match manuel reste possible et conserve ses avertissements.
+La règle, les rangs et les exclusions sont archivés avec chaque nouvelle consultation et
+restitués dans ses traces serveur. Les anciennes archives ne sont pas réécrites.
+
+Ce pré-tri sert à choisir les matchs à approfondir. Les spécialistes consultent uniquement
+ce périmètre et le coach peut écarter un choix après leurs avis sourcés. Aucun combiné
+optimal ni probabilité jointe n’est calculé. Aucun appel au modèle n’est fait par l’aperçu.
+
+
+## Historiques nationaux et européens
+
+Les championnats nationaux utilisent par défaut cinq ans de résultats ; les coupes UEFA, dix ans, dans des historiques séparés par compétition. `[domestic].history_years` et `[europe].history_years` règlent les imports ; `[model].max_history_days` et `[europe].max_history_days` règlent leurs fenêtres de calcul. Une configuration utilisateur propre à une coupe prime sur les valeurs par défaut.
+
+La forme nationale des clubs engagés en Europe est un contexte descriptif : 5 et 10 derniers matchs, buts pour/contre et bilans domicile/extérieur sur 180 jours. Un résultat ancien de plus de 21 jours est signalé. Les clubs sont reliés par noms exacts ou correspondances explicites ; une identité ambiguë reste indisponible. Ce contexte ne comble pas un historique européen insuffisant et ne modifie pas la baseline.
+
+Les résultats européens acceptés sont confirmés à 90 minutes ; prolongations, tirs au but et heures incertaines sont exclus. Le calendrier et les cotes publiques se synchronisent explicitement avec `sync-leagues --leagues UCL UEL UECL`. Les cotes sans heure de cotation vérifiable restent indicatives et ne permettent aucune simulation.
+
+Le MCP lit uniquement le workspace indiqué dans sa configuration. Il ne consolide pas les sous-workspaces par compétition et ne représente pas le bilan prospectif global : une réponse vide à la racine ne prouve pas une absence de prévisions suivies.

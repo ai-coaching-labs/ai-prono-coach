@@ -55,6 +55,26 @@ class HistoryImportTests(unittest.TestCase):
                 sync_history(self.ws, ['2526'])
             fetch.assert_not_called()
 
+    def test_uppercase_team_comparison_preserves_ids_dates_and_detects_score_correction(self):
+        with patch('prono.history_import.fetch_csv', return_value=CSV), patch('prono.history_import.utcnow',return_value=self.now):
+            sync_history(self.ws,['2526'])
+        path=self.ws.path('data/history.csv');original=path.read_bytes()
+        uppercase=CSV.replace('Rennes','RENNES').replace('Marseille','MARSEILLE')
+        with patch('prono.history_import.fetch_csv',return_value=uppercase):
+            self.assertEqual(sync_history(self.ws,['2526'])['added'],0)
+        self.assertEqual(path.read_bytes(),original)
+        with patch('prono.history_import.fetch_csv',return_value=uppercase.replace(',1,0',',2,0')):
+            with self.assertRaisesRegex(ValueError,'corrigée'):
+                sync_history(self.ws,['2526'])
+        self.assertEqual(path.read_bytes(),original)
+
+    def test_duplicate_or_identical_teams_differing_only_in_case_are_rejected(self):
+        duplicate=CSV+CSV.splitlines()[1].replace('Rennes','RENNES').replace('Marseille','MARSEILLE')+'\n'
+        with self.assertRaisesRegex(ValueError,'dupliqué'):
+            normalize_history(duplicate,'2526',self.now.isoformat())
+        with self.assertRaisesRegex(ValueError,'identiques'):
+            normalize_history(CSV.replace('Marseille','RENNES'),'2526',self.now.isoformat())
+
     def test_partial_download_does_not_commit(self):
         with patch('prono.history_import.fetch_csv', side_effect=[CSV, ValueError('indisponible')]):
             with self.assertRaises(ValueError):

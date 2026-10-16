@@ -14,7 +14,7 @@ for name in src scripts agents skills templates docs; do
     ditto "$PRONO_ROOT/$name" "$PRONO_BUILD/payload/$name"
 done
 cp "$PRONO_ROOT/config/workspace.toml" "$PRONO_BUILD/payload/config/workspace.toml"
-cp "$PRONO_ROOT/AGENTS.md" "$PRONO_ROOT/README.md" "$PRONO_ROOT/install.sh" "$PRONO_ROOT/pyproject.toml" "$PRONO_BUILD/payload/"
+cp "$PRONO_ROOT/AGENTS.md" "$PRONO_ROOT/README.md" "$PRONO_ROOT/LICENSE" "$PRONO_ROOT/install.sh" "$PRONO_ROOT/pyproject.toml" "$PRONO_BUILD/payload/"
 find "$PRONO_BUILD/payload" -type d -name __pycache__ -prune -exec rm -rf {} +
 find "$PRONO_BUILD/payload" -type f \( -name '.DS_Store' -o -name '._*' \) -delete
 COPYFILE_DISABLE=1 tar -czf "$PRONO_APP/Contents/Resources/engine.tar.gz" -C "$PRONO_BUILD/payload" .

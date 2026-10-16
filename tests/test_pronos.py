@@ -52,6 +52,37 @@ class PronosTests(unittest.TestCase):
         self.assertIsNone(r['comparison'])
         self.assertEqual(r['model']['as_of'],self.now.isoformat())
 
+    def test_coach_receives_computed_score_and_btts_without_changing_pick(self):
+        from prono.chat import coach_facts
+        from prono.forecast_details import forecast_details
+        expected = selections(self.ws, league='F1', now=self.now)['matches'][0]
+        with patch('prono.pronos.utcnow', return_value=self.now), patch('prono.chat.utcnow', return_value=self.now):
+            facts = coach_facts(self.ws, league='F1', event_id=self.fixture['event_id'])
+        row = facts['matches'][0]
+        self.assertEqual(row['probabilities'], expected['model']['probabilities'])
+        self.assertEqual(row['model_pick'], expected['outcome'])
+        self.assertEqual(row['forecast_details'], forecast_details(expected['model']))
+        self.assertIsNotNone(row['forecast_details'])
+
+    def test_xg_context_is_local_and_keeps_production_probabilities(self):
+        from prono.chat import coach_facts
+        from prono.understat import save_capture
+        expected = selections(self.ws, league='F1', now=self.now)['matches'][0]
+        raw = {'id':'100', 'isResult':True,
+               'h':{'id':'1', 'title':self.fixture['home']},
+               'a':{'id':'2', 'title':self.fixture['away']},
+               'goals':{'h':'2','a':'1'}, 'xG':{'h':'1.2','a':'0.7'},
+               'datetime':(self.now-timedelta(days=3)).replace(tzinfo=None).isoformat(sep=' ')}
+        save_capture(self.ws, 'F1', 2026, {'dates':[raw]}, self.now-timedelta(minutes=1))
+        with patch('prono.pronos.utcnow',return_value=self.now), patch('prono.chat.utcnow',return_value=self.now), patch('prono.understat.fetch_season') as network:
+            facts=coach_facts(self.ws,league='F1',event_id=self.fixture['event_id'])
+        network.assert_not_called()
+        row=facts['matches'][0]
+        self.assertEqual(row['probabilities'],expected['model']['probabilities'])
+        self.assertEqual(row['model_pick'],expected['outcome'])
+        self.assertAlmostEqual(row['understat_xg']['home']['last5']['xg_for_per_match'],1.2)
+        self.assertAlmostEqual(row['understat_xg']['away']['last5']['xg_for_per_match'],0.7)
+
     def test_model_pick_display_is_separate_from_simulation_abstention(self):
         import html
         from prono.pronos import render

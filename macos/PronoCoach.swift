@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import WebKit
+import Darwin
 
 struct RunResult { let status: Int32; let output: String }
 func run(_ path: String, _ args: [String], at: URL? = nil) throws -> RunResult {
@@ -14,22 +15,54 @@ func run(_ path: String, _ args: [String], at: URL? = nil) throws -> RunResult {
 }
 func shellQuote(_ s: String) -> String { "'" + s.replacingOccurrences(of: "'", with: "'\\''") + "'" }
 
+func isDashboardNavigation(_ destination: URL, dashboardURL: URL) -> Bool {
+    dashboardURL.host == "127.0.0.1" && dashboardURL.scheme == "http"
+        && destination.scheme == dashboardURL.scheme
+        && destination.host == dashboardURL.host
+        && destination.port == dashboardURL.port
+        && destination.user == nil && destination.password == nil
+}
+
+// Réserver un port libre sur la boucle locale, sans réutiliser un ancien moteur.
+func dashboardPort() throws -> UInt16 {
+    let fd = socket(AF_INET, SOCK_STREAM, 0)
+    guard fd >= 0 else { throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno)) }
+    defer { close(fd) }
+    var address = sockaddr_in()
+    address.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+    address.sin_family = sa_family_t(AF_INET)
+    address.sin_addr.s_addr = inet_addr("127.0.0.1")
+    let bound = withUnsafePointer(to: &address) {
+        $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+            bind(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
+        }
+    }
+    guard bound == 0 else { throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno)) }
+    var length = socklen_t(MemoryLayout<sockaddr_in>.size)
+    let result = withUnsafeMutablePointer(to: &address) {
+        $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { getsockname(fd, $0, &length) }
+    }
+    guard result == 0 else { throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno)) }
+    return UInt16(bigEndian: address.sin_port)
+}
+
 @MainActor final class CoachModel: ObservableObject {
     @Published var ready = false
     @Published var busy = false
+    @Published var startupFailed = false
     @Published var status = "Préparez le coach, puis ouvrez le dashboard ou une conversation."
     @Published var pageURL: URL?
     @Published var showSetup = true
     @Published var workspace = UserDefaults.standard.string(forKey: "workspace") ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Documents/AI Prono Coach").path
     private var server: Process?
     private var engine: URL?
-    private let port = 8877
+    private var port: UInt16 = 0
     func chooseWorkspace() {
         let panel = NSOpenPanel(); panel.canChooseDirectories = true; panel.canChooseFiles = false; panel.canCreateDirectories = true
         if panel.runModal() == .OK, let url = panel.url { workspace = url.path }
     }
     func prepare() {
-        guard !busy else { return }; busy = true; status = "Préparation du moteur et des agents…"
+        guard !busy else { return }; busy = true; startupFailed = false; status = "Préparation du moteur et des agents…"
         let dataURL = URL(fileURLWithPath: workspace)
         Task {
             do {
@@ -54,14 +87,22 @@ func shellQuote(_ s: String) -> String { "'" + s.replacingOccurrences(of: "'", w
                 }.value
                 guard result.status == 0 else { throw NSError(domain: "Prono", code: 1, userInfo: [NSLocalizedDescriptionKey: result.output]) }
                 engine = engineURL; UserDefaults.standard.set(workspace, forKey: "workspace")
-                try startServer(); ready = true; showSetup = false; status = "Coach prêt · données dans " + workspace
-            } catch { status = error.localizedDescription }
+                showSetup = false
+                status = "Démarrage du dashboard…"
+                try await startServer()
+                ready = true; status = "Coach prêt · données dans " + workspace
+            } catch {
+                stop(); ready = false; startupFailed = true
+                status = error.localizedDescription
+            }
             busy = false
         }
     }
-    private func startServer() throws {
+    private func startServer() async throws {
         guard let engine = engine else { return }
-        if let server = server, server.isRunning { return }
+        stop()
+        pageURL = nil
+        port = try dashboardPort()
         let p = Process(); p.executableURL = engine.appendingPathComponent(".venv/bin/python")
         p.arguments = ["-m", "prono.cli", "--workspace", workspace, "ui", "--port", String(port)]
         p.currentDirectoryURL = URL(fileURLWithPath: workspace)
@@ -69,16 +110,23 @@ func shellQuote(_ s: String) -> String { "'" + s.replacingOccurrences(of: "'", w
         if !FileManager.default.fileExists(atPath: logURL.path) { FileManager.default.createFile(atPath: logURL.path, contents: nil) }
         let log = try FileHandle(forWritingTo: logURL); try log.seekToEnd()
         p.standardOutput = log; p.standardError = log; try p.run(); server = p
-        Task {
-            for _ in 0..<50 {
-                try? await Task.sleep(nanoseconds: 200_000_000)
-                guard p.isRunning else { status = "Le dashboard n’a pas démarré. Le port 8877 est peut-être occupé."; return }
-                if let url = URL(string: "http://127.0.0.1:\(port)/api/summary"), let (_, response) = try? await URLSession.shared.data(from: url), (response as? HTTPURLResponse)?.statusCode == 200 {
-                    pageURL = URL(string: "http://127.0.0.1:\(port)/"); return
-                }
+        let deadline = Date().addingTimeInterval(12)
+        let url = URL(string: "http://127.0.0.1:\(port)/api/health")!
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 1
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        while Date() < deadline {
+            guard p.isRunning else {
+                throw NSError(domain: "Prono", code: 2, userInfo: [NSLocalizedDescriptionKey: "Le dashboard n’a pas démarré. Consultez le diagnostic dans le dossier de l’app, puis réessayez."])
             }
-            status = "Le dashboard tarde à démarrer. Consultez le diagnostic dans le dossier de l’app."
+            if let (_, response) = try? await URLSession.shared.data(for: request),
+               (response as? HTTPURLResponse)?.statusCode == 200 {
+                pageURL = URL(string: "http://127.0.0.1:\(port)/")
+                return
+            }
+            try await Task.sleep(nanoseconds: 200_000_000)
         }
+        throw NSError(domain: "Prono", code: 3, userInfo: [NSLocalizedDescriptionKey: "Le dashboard tarde à démarrer. Consultez le diagnostic dans le dossier de l’app, puis réessayez."])
     }
     func navigate(_ path: String) { pageURL = URL(string: "http://127.0.0.1:\(port)" + path) }
     func openData() { NSWorkspace.shared.open(URL(fileURLWithPath: workspace)) }
@@ -103,7 +151,11 @@ func shellQuote(_ s: String) -> String { "'" + s.replacingOccurrences(of: "'", w
                     let facts = try JSONSerialization.jsonObject(with: Data(result.output.utf8)) as? [String: Any]
                     let leagues = facts?["leagues"] as? [String: [String: Any]] ?? [:]
                     let failures = leagues.values.filter { ($0["status"] as? String) == "error" }.count
-                    status = "Collecte terminée · \(failures) import(s) en échec. Voir Couverture & sources."
+                    let markets = facts?["markets"] as? [String: Any] ?? [:]
+                    let calendarFailures = (markets["issues"] as? [[String: Any]] ?? []).count
+                    let domestic = markets["domestic"] as? [String: Any] ?? [:]
+                    let upcoming = domestic["matches"] as? Int ?? 0
+                    status = "Collecte terminée · \(upcoming) match(s) nationaux chargés jusqu’à J+3 · \(failures) historique(s) et \(calendarFailures) source(s) calendrier en échec. Voir Couverture & sources."
                     navigate("/?tab=pronos")
                 } else { status = result.output }
             } catch { status = error.localizedDescription }
@@ -115,16 +167,18 @@ func shellQuote(_ s: String) -> String { "'" + s.replacingOccurrences(of: "'", w
 
 struct CoachWebView: NSViewRepresentable {
     let url: URL
-    func makeCoordinator() -> Coordinator { Coordinator() }
+    func makeCoordinator() -> Coordinator { Coordinator(dashboardURL: url) }
     func makeNSView(context: Context) -> WKWebView {
-        let web = WKWebView(); web.navigationDelegate = context.coordinator; web.load(URLRequest(url: url)); return web
+        let web = WKWebView(); web.navigationDelegate = context.coordinator; context.coordinator.lastURL = url; web.load(URLRequest(url: url)); return web
     }
     func updateNSView(_ web: WKWebView, context: Context) { if context.coordinator.lastURL != url { context.coordinator.lastURL = url; web.load(URLRequest(url: url)) } }
     class Coordinator: NSObject, WKNavigationDelegate {
         var lastURL: URL?
+        let dashboardURL: URL
+        init(dashboardURL: URL) { self.dashboardURL = dashboardURL; super.init() }
         func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
             guard let url = navigationAction.request.url else { decisionHandler(.cancel); return }
-            if url.host == "127.0.0.1" && url.port == 8877 { decisionHandler(.allow) }
+            if isDashboardNavigation(url, dashboardURL: dashboardURL) { decisionHandler(.allow) }
             else { if url.scheme == "https" || url.scheme == "http" { NSWorkspace.shared.open(url) }; decisionHandler(.cancel) }
         }
     }
@@ -161,6 +215,13 @@ struct RootView: View {
                 }.padding(40).frame(maxWidth: 800)
                 Spacer()
             } else if let url = model.pageURL { CoachWebView(url: url) }
+            else if model.startupFailed {
+                VStack(spacing: 16) {
+                    Text("Le dashboard n’a pas pu démarrer").font(.headline)
+                    Text(model.status).foregroundStyle(.secondary)
+                    Button("Réessayer") { model.prepare() }.buttonStyle(.borderedProminent).disabled(model.busy)
+                }.padding(40).frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
             else { ProgressView("Démarrage du dashboard…").frame(maxWidth: .infinity, maxHeight: .infinity) }
             Divider()
             HStack {

@@ -29,3 +29,10 @@ Privilégier comptes rendus officiels puis lecture indépendante de médias iden
 Les jugements du club ou d'un journaliste restent attribués, jamais présentés comme
 une mesure objective. Citer URL, match concerné et date ; sources postérieures au
 moment d'analyse exclues. Sans lecture accessible : contenu indisponible.
+
+Pendant une consultation pré-match, ce rôle travaille en aveugle aux prévisions Poisson,
+comme tous les autres rôles et le coach. Ne pas demander ni reconstituer le choix,
+les probabilités, les scores, le BTTS ou l’espérance du modèle. Les statistiques
+observées et les sources restent utilisables. L’application compare les avis au
+modèle après le verdict. Une lecture de bilan historique explicitement demandée
+reste distincte d’une nouvelle prédiction.

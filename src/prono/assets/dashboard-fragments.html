@@ -1,0 +1,39 @@
+<!-- Static presentation fragments; dynamic values are escaped by their Python callers. -->
+
+<!-- fragment: page_li -->
+<li>{home} / {away} — {kickoff_local} : {reason}{value}</li>
+<!-- /fragment -->
+
+<!-- fragment: page_li_markup -->
+<li>{action}</li>
+<!-- /fragment -->
+
+<!-- fragment: page_article_markup -->
+<article><small>{label}</small><strong>{value}</strong></article>
+<!-- /fragment -->
+
+<!-- fragment: tr_open -->
+<tr>
+<!-- /fragment -->
+
+<!-- fragment: page_td_markup -->
+<td>{v}</td>
+<!-- /fragment -->
+
+<!-- fragment: tr_close -->
+</tr>
+<!-- /fragment -->
+
+<!-- fragment: page_li_aucun_match_charge_pour_cette_journee -->
+<li>Aucun match chargé pour cette journée.</li>
+<!-- /fragment -->
+
+<!-- fragment: page_html_ai_prono_coach_body_h1_tag_cards_artic -->
+<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>AI Prono Coach</title>{icon_link}
+<style>{css}</style>
+<span class="tag">WORKSPACE PRIVÉ · SIMULATION · {dataset}</span><h1>AI Prono Coach</h1><p>Des chiffres vérifiables. Des décisions expliquées. Aucun placement de pari.</p>
+<h2>Historique sportif</h2><p>{rows} résultats · {len} équipes · Dernier match : {value}.</p><p>{notice}</p><details><summary>Équipes et sources</summary><p>{value_2}</p><p>{value_3}</p></details>
+<div class="cards">{cards}</div><h2>Point du {date} · {timezone}</h2><p>{notice_2}</p><ul>{value_4}</ul><ul>{daily_actions}</ul><p>Absences et compositions : indisponibles.</p><h2>Matchs chargés</h2><section><table><thead><tr><th>Match</th><th>Coup d'envoi UTC</th><th>1</th><th>N</th><th>2</th><th>Source</th></tr></thead><tbody>{rows_2}</tbody></table></section>
+<h2>Parler au coach</h2><p>Dans votre assistant : « Fais le point sur les matchs du jour », « Fais le bilan de mon journal fictif ».<br>Pour analyser une rencontre, utiliser son identifiant chargé. <a href="/chat">Ouvrir le chat intégré · Local ou Claude</a>.</p>
+<p>{notice_3}</p><p><a href="/api/summary">Résumé JSON</a> · Tableau en lecture seule, recharger pour actualiser.</p></html>
+<!-- /fragment -->

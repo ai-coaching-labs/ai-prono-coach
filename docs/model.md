@@ -7,7 +7,10 @@ du résultat sont strictement antérieurs. Conserver la fenêtre `max_history_da
 2. Estimer les moyennes de buts domicile/extérieur du championnat, régularisées par
 10 pseudo-matchs à 1,4 et 1,1 buts. Ces constantes sont des priors techniques non calibrés.
 3. Estimer attaque et défense de chaque équipe sur ses matchs domicile et extérieur,
-avec `prior_matches` de régularisation vers la moyenne du championnat.
+avec `prior_matches` de régularisation vers la moyenne du championnat. Les forces
+   d’une équipe agrègent ses matchs à domicile et à l’extérieur : elles ne sont pas
+   estimées séparément selon le terrain. Seules les moyennes de buts de la ligue
+   distinguent domicile et extérieur.
 4. Combiner attaque/défense et moyenne domicile/extérieur pour les buts attendus ;
 borner les intensités à [0,05 ; 8]. Modéliser les buts comme deux Poisson indépendants.
 5. Sommer les scores 0–40 pour produire 1N2 puis normaliser la masse restante.
@@ -89,3 +92,49 @@ et les prévisions déjà gelées restent inchangées.
 La forme et les comptes rendus lus par le journaliste servent à discuter ou écarter un choix,
 jamais à modifier intuitivement les probabilités. Une nouvelle probabilité intégrant plusieurs
 ligues et la récence nécessiterait une variante mesurée et validée séparément.
+
+## Maintien du modèle et jalon prospectif
+
+Les analyses approfondies peuvent afficher les scores modaux (ex æquo inclus)
+et « les deux équipes marquent » issus de la même distribution indépendante
+Poisson 0–40. Les probabilités 1N2 et leurs paramètres ne changent pas.
+Le mode global reste accessible dans le détail du modèle. `scores_by_outcome`
+fournit aussi le score le plus probable parmi ceux compatibles avec une issue,
+avec sa probabilité absolue. Ces calculs sont distincts du **score envisagé LLM**
+affiché dans le verdict : une hypothèse qualitative compatible avec son pronostic,
+sans probabilité inventée, possible même quand Python manque d’historique.
+Le BTTS Python reste lu dans les calculs, jamais déduit de cette hypothèse LLM.
+En cas d’abstention, aucun score ou BTTS n’est présenté comme un choix retenu.
+Ces lectures sont exploratoires, non calibrées et sans validation spécifique ni
+cotes associées : aucun avantage de marché ou rendement n’est calculé pour ces marchés.
+
+Le verdict final distingue le choix Python, la position argumentée du coach
+et une confiance qualitative faible/modérée/élevée sur le pronostic 1N2.
+Cette appréciation des faits et des informations manquantes n’est pas une mesure
+statistique, un pourcentage de réussite ou une note numérique. L’accord des
+spécialistes ne constitue pas une série de preuves indépendantes. Un match déjà
+commencé impose l’abstention pré-match ; des cotes périmées ou non vérifiées
+continuent de bloquer les simulations.
+
+La production et ses paramètres restent inchangés pendant l’accumulation du
+suivi. Le premier jalon est fixé à 300 prévisions non synthétiques réglées,
+configurable par `[tracking].min_settled_before_model_review`. Ce nombre ouvre
+une revue explicitement demandée ; il ne valide pas automatiquement le modèle.
+Aucune variante n’est promue par une étude ou par l’atteinte du jalon.
+
+Le suivi et les études affichent le Brier du marché normalisé hors marge et
+l’écart du modèle sur un sous-échantillon commun. Dans l’étude, les probabilités
+comparées au marché sont recalculées à la disponibilité documentée des cotes,
+avec le filtre temporel du mode choisi. Une couverture nulle est affichée comme
+indisponible, pas comme un score nul.
+
+Le pronostic final du coach peut retenir une autre issue 1/N/2 que le premier choix
+statistique, sur des faits sourcés. Ces deux choix sont explicitement séparés ;
+aucune probabilité n’est recalculée par le LLM et les prévisions archivées ne sont
+pas remplacées. Le scénario de score Python correspond à l’issue finale retenue.
+
+## Contexte xG observés
+
+Les spécialistes reçoivent les bilans locaux Understat lorsqu’ils sont disponibles.
+Ils enrichissent le verdict qualitatif sans entrer dans la baseline. Voir `docs/understat.md`
+pour la couverture, les dates de connaissance, les saisons et les exclusions temporelles.

@@ -7,19 +7,37 @@ Pour « quoi regarder aujourd'hui ? », suivre le skill `today`. Le briefing ras
 les matchs de la journée locale, les raisons d'abstention et le bilan fictif.
 Le texte déterministe du briefing fournit les faits ; le coach les explique selon le profil.
 
-Pour un match : obtenir `analyze_match` ou `prono analyze ID`, puis solliciter les spécialistes
-activés si l'assistant supporte effectivement cette délégation. Sans outil de délégation,
-traiter les perspectives activées séquentiellement ; ne pas annoncer de faux agents exécutés.
+Pour une consultation de match, coordonner les spécialistes activés à partir des faits
+sportifs sourcés, de la forme, des buts, du domicile/extérieur, des xG observés et des effectifs.
+Tous les rôles, coach compris, travaillent sans le choix, les probabilités, les scores
+ou le BTTS du modèle statistique. Ne pas demander ces sorties ni les inférer du tri.
+Ne transmettre aucun résultat Poisson à un spécialiste. L’application les conserve
+séparément et ajoute la comparaison uniquement après le verdict final.
 
-La synthèse tient en : **match et marché**, **données/source/date**, **probabilités calculées**,
-**écarts aux cotes**, **limites**, **décision d'observation ou d'abstention**.
-Ne pas transformer un avis qualitatif en ajustement chiffré des probabilités.
+Le coach retient une issue 1/N/2 étayée, un score envisagé compatible et une confiance
+faible/modérée/élevée sur l’issue. Le score est une hypothèse qualitative, sans
+probabilité inventée. S’il n’est pas raisonnablement étayé, il reste indéterminé.
+Une abstention doit se fonder sur les faits sportifs manquants ou contradictoires,
+pas sur l’absence de calcul du modèle. Un match commencé impose l’abstention pré-match.
+Une raison décisive et une réserve sourcées par match suffisent : 90 mots par match.
+Les avis concordants ne sont pas des preuves indépendantes. Une information déterminante
+manquante ou l’échec d’un spécialiste essentiel interdit une confiance élevée.
+
+Dans le chat de l’application, respecter le format JSON de verdict demandé par le
+serveur. Ne pas produire de tableau comparatif avec Python ni inventer ses valeurs :
+le code construit ce tableau, contrôle la cohérence des scores et conserve la réponse
+indépendante d’origine. Aucun appel supplémentaire n’est nécessaire pour comparer.
+Un bilan explicitement demandé ou une explication d’une ancienne analyse peut lire
+les résultats archivés ; il ne s’agit pas d’une nouvelle prédiction indépendante.
+
 Pour une nouvelle simulation, proposer la commande paper, jamais une action chez un bookmaker.
 Pour un bilan, lire `paper_summary` et distinguer résultats fictifs et qualité prédictive.
 Conserver les décisions dans `analyses/` via `analyze --save`, pas par des nombres écrits de mémoire.
 
-Pour une analyse complète, demander au journaliste les annonces récentes et à l'analyste
-effectif les absences/compositions. L'expert bookmaker contrôle le marché et les captures,
+L’équipe essentielle réunit le journaliste et les effectifs dans une seule intervention,
+puis l’analyste sportif et le coach. Le journaliste vérifie les annonces récentes et
+les absences/compositions. Demander un expert effectifs distinct uniquement sur demande
+précise ou en mode équipe complète. L'expert bookmaker contrôle le marché et les captures,
 l'analyste sportif discute le contexte tactique, l'analyste marché lit les calculs et
 le responsable des limites vérifie les blocages. Distinguer les avis réellement produits
 des rôles seulement configurés. Dans le chat du dashboard, l’analyse Équipe IA lance
@@ -31,5 +49,5 @@ de publication et de vérification ; aucune modification des probabilités par l
 
 Pour les matchs européens, la synthèse explique aussi la forme en championnat fournie
 par Python et le contenu des dernières prestations documenté par le journaliste.
-Un avis d'analyste peut diverger du choix statistique : exposer les faits qui justifient
-cette réserve, sans remplacer les probabilités du modèle par des nombres inventés.
+Un avis d’analyste porte sur le match indépendamment de la baseline. L’application
+expose ensuite les différences, sans remplacer les probabilités du modèle.

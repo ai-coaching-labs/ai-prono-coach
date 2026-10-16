@@ -1,0 +1,205 @@
+<!-- Static presentation fragments; dynamic values are escaped by their Python callers. -->
+
+<!-- fragment: page_a_tous_les_championnats -->
+<a class="league {value}" href="{link}"><span>Tous les championnats</span><b>{len}</b></a>
+<!-- /fragment -->
+
+<!-- fragment: page_div_country -->
+<div class="country">{nation}</div>
+<!-- /fragment -->
+
+<!-- fragment: page_a_league_value -->
+<a class="league {value}" href="{link}"><span>{name}</span></a>
+<!-- /fragment -->
+
+<!-- fragment: page_option_toutes_les_competitions -->
+<option value="all">Toutes les compétitions</option>
+<!-- /fragment -->
+
+<!-- fragment: page_option_markup -->
+<option value="{key}" {value}>{value_2}</option>
+<!-- /fragment -->
+
+<!-- fragment: tab_links_a_tab_value -->
+<a class="tab {value}" {value_2} href="{link}">{label}</a>
+<!-- /fragment -->
+
+<!-- fragment: page_form_competition -->
+<form method="get" class="filters"><input type="hidden" name="tab" value="{tab}"><label>Compétition<select name="league">{options}</select></label>
+<!-- /fragment -->
+
+<!-- fragment: page_label_equipe -->
+<label>Équipe<input name="q" value="{query}" placeholder="Rechercher une équipe…"></label>
+<!-- /fragment -->
+
+<!-- fragment: page_label_calendrier -->
+<label>Calendrier<select name="period">
+<!-- /fragment -->
+
+<!-- fragment: page_option_markup_2 -->
+<option value="{value}" {value_2}>{label}</option>
+<!-- /fragment -->
+
+<!-- fragment: page_select_markup -->
+</select></label>
+<!-- /fragment -->
+
+<!-- fragment: page_button_filtrer -->
+<button type="submit">Filtrer</button></form>
+<!-- /fragment -->
+
+<!-- fragment: page_form_competition_equipe_filtrer -->
+<form method="get" class="filters"><input type="hidden" name="tab" value="pronos"><input type="hidden" name="horizon" value="{period}"><label>Compétition<select name="league">{options}</select></label><label>Équipe<input name="q" value="{query}" placeholder="Rechercher une équipe…"></label><button type="submit">Filtrer</button></form>
+<!-- /fragment -->
+
+<!-- fragment: page_div_le_calendrier_du_marche_heures_locales -->
+<div class="section-head"><h2>Le calendrier du marché</h2><span>Heures locales ·&#32;
+<!-- /fragment -->
+
+<!-- fragment: page_span_markup -->
+</span></div>
+<!-- /fragment -->
+
+<!-- fragment: page_div_match_grid -->
+<div class="match-grid">
+<!-- /fragment -->
+
+<!-- fragment: page_div_offer -->
+<div class="offer"><small>
+<!-- /fragment -->
+
+<!-- fragment: page_small_markup -->
+</small><div class="prices">
+<!-- /fragment -->
+
+<!-- fragment: page_div_markup -->
+<div><span>{label}</span><b>{value}</b></div>
+<!-- /fragment -->
+
+<!-- fragment: page_div_markup_2 -->
+</div></div>
+<!-- /fragment -->
+
+<!-- fragment: page_p_horaire_mis_a_jour_changement_s_conserve_ -->
+<p>Horaire mis à jour · {len} changement(s) conservé(s).</p>
+<!-- /fragment -->
+
+<!-- fragment: p_open -->
+<p>
+<!-- /fragment -->
+
+<!-- fragment: p_close -->
+</p>
+<!-- /fragment -->
+
+<!-- fragment: page_p_cotes_indisponibles_pour_les_bookmakers_p -->
+<p>Cotes indisponibles pour les bookmakers pris en charge.</p>
+<!-- /fragment -->
+
+<!-- fragment: page_article_vs_cotation_non_horodatee_observati -->
+<article class="match"><div class="match-top"><span>{value_0}</span><time>{value}</time></div><h3>{home}<em>vs</em>{away}</h3>{value_2}{revisions}<footer><span class="dot"></span>{value_3}Cotation non horodatée · observation<br>{health}</footer></article>
+<!-- /fragment -->
+
+<!-- fragment: div_close -->
+</div>
+<!-- /fragment -->
+
+<!-- fragment: page_div_aucune_rencontre_dans_cette_selection_e -->
+<div class="empty"><h3>Aucune rencontre dans cette sélection</h3><p>Essayez un autre championnat ou « Tout le fichier ». Le fournisseur public ne couvre que son calendrier publié, pas toutes les rencontres à venir.</p></div>
+<!-- /fragment -->
+
+<!-- fragment: page_div_les_derniers_resultats_charges -->
+<div class="section-head"><h2>Les derniers résultats chargés</h2><span>
+<!-- /fragment -->
+
+<!-- fragment: page_span_matchs_filtres_actifs_date_championnat -->
+ matchs · filtres actifs</span></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Championnat</th><th>Domicile</th><th>Score</th><th>Extérieur</th></tr></thead><tbody>
+<!-- /fragment -->
+
+<!-- fragment: tr_open -->
+<tr>
+<!-- /fragment -->
+
+<!-- fragment: page_td_markup -->
+<td>{value}</td>
+<!-- /fragment -->
+
+<!-- fragment: tr_close -->
+</tr>
+<!-- /fragment -->
+
+<!-- fragment: page_tbody_markup -->
+</tbody></table></div>
+<!-- /fragment -->
+
+<!-- fragment: page_div_aucun_resultat_pour_ces_filtres -->
+<div class="empty">Aucun résultat pour ces filtres.</div>
+<!-- /fragment -->
+
+<!-- fragment: page_div_une_equipe_pour_preparer_chaque_match_r -->
+<div class="section-head"><h2>Une équipe pour préparer chaque match</h2><span>Rôles configurés · exécutés sur demande dans votre assistant</span></div><div class="match-grid">
+<!-- /fragment -->
+
+<!-- fragment: page_article_match -->
+<article class="match"><div class="eyebrow">{value}</div><h3>{name}</h3><p>{description}</p></article>
+<!-- /fragment -->
+
+<!-- fragment: page_div_demander_une_analyse_complete_dans_votr -->
+</div><div class="notes"><h3>Demander une analyse complète</h3><p>Dans votre assistant : « Prépare un dossier complet sur ce match : dernières nouvelles, absents, compositions, cotes et avis des spécialistes. »</p><p>Les recherches sont effectuées par l’assistant avec ses outils web. Cette page ne lance pas de modèles en arrière-plan. Les informations sourcées ne modifient pas les probabilités par intuition.</p></div><h2>Dossiers de contexte archivés</h2>
+<!-- /fragment -->
+
+<!-- fragment: page_div_aucun_dossier_source_archive_les_roles_ -->
+<div class="empty">Aucun dossier sourcé archivé. Les rôles sont prêts ; aucune recherche de club n’est présentée comme déjà effectuée.</div>
+<!-- /fragment -->
+
+<!-- fragment: page_article_dossier_archive_verifier_les_evolut -->
+<article class="notes"><h3>{home} / {away}</h3><p>Dossier archivé · vérifier les évolutions depuis le {as_of}.</p>
+<!-- /fragment -->
+
+<!-- fragment: page_p -->
+<p><b>{status_label} · {team}</b> — {claim}<br>
+<!-- /fragment -->
+
+<!-- fragment: page_a -->
+<a href="{url}">{title}</a> ·&#32;
+<!-- /fragment -->
+
+<!-- fragment: page_p_manques -->
+<p>Manques :&#32;
+<!-- /fragment -->
+
+<!-- fragment: page_p_markup_3 -->
+</p></article>
+<!-- /fragment -->
+
+<!-- fragment: page_div_ce_qui_est_reellement_disponible_couver -->
+<div class="section-head"><h2>Ce qui est réellement disponible</h2><span>Couverture explicite, aucun chiffre inventé</span></div><div class="table-wrap"><table><thead><tr><th>Championnat</th><th>Résultats</th><th>Début des archives</th><th>Dernier match</th><th>Fenêtre du modèle</th><th>Import</th></tr></thead><tbody>
+<!-- /fragment -->
+
+<!-- fragment: page_div_pagination -->
+<div class="pagination">
+<!-- /fragment -->
+
+<!-- fragment: page_a_precedent -->
+<a href="{link}">← Précédent</a>
+<!-- /fragment -->
+
+<!-- fragment: page_span_page -->
+<span>Page {page_number} / {pages}</span>
+<!-- /fragment -->
+
+<!-- fragment: page_a_suivant -->
+<a href="{link}">Suivant →</a>
+<!-- /fragment -->
+
+<!-- fragment: page_div_import_s_en_echec_consultez_couverture_ -->
+<div class="notice">{errors_count} import(s) en échec. Consultez Couverture & sources ; les données précédentes sont conservées.</div>
+<!-- /fragment -->
+
+<!-- fragment: page_details_dates_de_collecte_et_limites_des_co -->
+<details class="collection"><summary>Dates de collecte et limites des cotes</summary><p>{collected}. Heure de cotation inconnue : simulations bloquées pour ces cotes.</p></details>
+<!-- /fragment -->
+
+<!-- fragment: page_script_markup -->
+<script src="/dashboard.js" defer></script>
+<!-- /fragment -->

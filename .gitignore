@@ -1,16 +1,40 @@
+# Environnements Python et fichiers générés
 .venv/
+venv/
 .DS_Store
 __pycache__/
+*.py[cod]
 *.egg-info/
 build/
 dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Secrets et données personnelles
 .env
+.env.*
+!.env.example
 config/workspace.user.toml
 data/
 journal/
 analyses/
 rapports/
 memory/
+
+# Exports vidéo, captures et outils de prévisualisation
+/exports/
+/screenshots/
+/captures/
+/recordings/
+/playwright-report/
+/test-results/
+node_modules/
+
+# Configuration locale des assistants et éditeurs
 .claude/
 .opencode/
 .github/agents/
@@ -21,3 +45,5 @@ memory/
 .mcp.json
 GEMINI.md
 .gemini/
+.idea/
+.vscode/

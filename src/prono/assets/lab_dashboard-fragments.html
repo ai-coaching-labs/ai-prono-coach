@@ -1,0 +1,213 @@
+<!-- Static presentation fragments; dynamic values are escaped by their Python callers. -->
+
+<!-- fragment: tracking_view_div_mes_pronos_suivis_previsions_c -->
+<div class="section-head"><h2>Mes pronos suivis</h2><span>Prévisions conservées avant coup d’envoi</span></div>
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_div_stats -->
+<div class="stats">
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_article_stat -->
+<article class="stat"><span>{label}</span><strong>{value}</strong></article>
+<!-- /fragment -->
+
+<!-- fragment: div_close -->
+</div>
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_p_score_probabiliste_erreur_logari -->
+<p>Score probabiliste : {metric} · Erreur logarithmique : {metric_2}. Ces mesures restent indisponibles tant que les matchs suivis ne sont pas terminés.</p>
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_p_jalon_de_revue_previsions_reglee -->
+<p>Jalon de revue : {settled} / {minimum_settled} prévisions réglées dans cette sélection. Baseline maintenue ; aucune promotion automatique.</p>
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_p_comparaison_au_marche_sur_memes_ -->
+<p>Comparaison au marché sur {evaluated} mêmes matchs : Brier modèle {metric} / marché {metric_2} ; écart {metric_3}. Un écart négatif favorise le modèle.</p>
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_p_markup -->
+<p><small>
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_small_markup -->
+</small></p>
+<!-- /fragment -->
+
+<!-- fragment: p_open -->
+<p>
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_p_resultat_s_exclu_s_de_cette_comp -->
+ résultat(s) exclu(s) de cette comparaison : cotes non horodatées, anciennes ou invalides.</p>
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_div_enregistrer_les_pronos_charges -->
+<div class="actions"><button id="track-capture"{disabled}>Enregistrer les pronos chargés</button> <button id="track-results"{disabled_2}>Vérifier les résultats publics</button></div><p id="lab-status" role="status"></p>
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_div_notice -->
+<div class="notice">
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_div_le_suivi_fonctionne_pendant_qu -->
+ Le suivi fonctionne pendant que le dashboard est ouvert. Les résultats publics des seuls matchs suivis sont vérifiés après le match, au plus une fois par heure et par championnat. Les mises fictives restent dans leur journal habituel.</div>
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_p_suivi_automatique -->
+<p>Suivi automatique :&#32;
+<!-- /fragment -->
+
+<!-- fragment: p_close -->
+</p>
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_p_import_de_resultats -->
+<p>Import de résultats ·&#32;
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_div_match_prono_enregistre_resulta -->
+<div class="table-wrap"><table><thead><tr><th>Match</th><th>Prono enregistré</th><th>Résultat</th><th>Suivi</th></tr></thead><tbody>
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_br_markup -->
+<br><small>
+<!-- /fragment -->
+
+<!-- fragment: small_close -->
+</small>
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_tr_markup -->
+<tr><td>
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_td_markup -->
+</td><td>
+<!-- /fragment -->
+
+<!-- fragment: td_close -->
+</td>
+<!-- /fragment -->
+
+<!-- fragment: td_open -->
+<td>
+<!-- /fragment -->
+
+<!-- fragment: tr_close -->
+</tr>
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_tbody_markup -->
+</tbody></table></div>
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_p_aucun_prono_enregistre_pour_ces_ -->
+<p>Aucun prono enregistré pour ces filtres. Le suivi archive les prochains matchs calculables, même si leurs cotes restent indicatives.</p>
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_div_pagination -->
+<div class="pagination">
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_a_precedent -->
+<a href="{link}">← Précédent</a>
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_span_page -->
+<span>Page {page} / {pages}</span>
+<!-- /fragment -->
+
+<!-- fragment: tracking_view_a_suivant -->
+<a href="{link}">Suivant →</a>
+<!-- /fragment -->
+
+<!-- fragment: evaluation_view_div_qualite_des_probabilites_etu -->
+<div class="section-head"><h2>Qualité des probabilités</h2><span>Études locales · calculs Python</span></div>
+<!-- /fragment -->
+
+<!-- fragment: evaluation_view_div_evaluation_etude_retrospecti -->
+<div class="filters"><label>Évaluation<select id="evaluation-mode"><option value="snapshot">Étude rétrospective des archives</option><option value="observed">Dates de connaissance strictes</option></select></label><button id="evaluate"{disabled}>Comparer les modèles</button></div><p id="lab-status" role="status"></p>
+<!-- /fragment -->
+
+<!-- fragment: evaluation_view_div_le_modele_utilise_pour_les_p -->
+<div class="notice">Le modèle utilisé pour les pronos reste poisson-baseline-v1. Les variantes sont expérimentales. L’étude des archives ne reconstitue pas les anciennes dates de publication ; le suivi réel est visible dans « Mes pronos suivis ». « Tous les championnats » compare les compétitions définies dans la configuration d’évaluation.</div>
+<!-- /fragment -->
+
+<!-- fragment: evaluation_view_p_aucune_etude_enregistree_la_co -->
+<p>Aucune étude enregistrée. La comparaison utilise les données chargées et ne fait aucun appel à une IA ou à une API.</p>
+<!-- /fragment -->
+
+<!-- fragment: evaluation_view_p_derniere_etude -->
+<p>Dernière étude :&#32;
+<!-- /fragment -->
+
+<!-- fragment: evaluation_view_p_markup -->
+</p><p>
+<!-- /fragment -->
+
+<!-- fragment: evaluation_view_p_competitions_chargees_sans_etu -->
+<p>Compétitions chargées sans étude dans ce rapport :&#32;
+<!-- /fragment -->
+
+<!-- fragment: evaluation_view_p -->
+.</p>
+<!-- /fragment -->
+
+<!-- fragment: evaluation_view_h_markup -->
+<h3>
+<!-- /fragment -->
+
+<!-- fragment: evaluation_view_h_markup_2 -->
+</h3>
+<!-- /fragment -->
+
+<!-- fragment: evaluation_view_p_etude_a_actualiser -->
+<p><b>Étude à actualiser</b> :&#32;
+<!-- /fragment -->
+
+<!-- fragment: evaluation_view_p_donnees_synthetiques_demonstra -->
+<p><b>Données SYNTHÉTIQUES · démonstration</b></p>
+<!-- /fragment -->
+
+<!-- fragment: evaluation_view_div_modele_matchs_brier_log_loss -->
+<div class="table-wrap"><table><thead><tr><th>Modèle</th><th>Matchs</th><th>Brier ↓</th><th>Log loss ↓</th><th>Choix corrects</th><th>Écart Brier / baseline</th></tr></thead><tbody>
+<!-- /fragment -->
+
+<!-- fragment: tr_open -->
+<tr>
+<!-- /fragment -->
+
+<!-- fragment: evaluation_view_tbody_un_score_plus_bas_est_meil -->
+</tbody></table></div><p><small>Un score plus bas est meilleur. Les écarts et intervalles portent sur les mêmes matchs ; ils ne démontrent pas un avantage de marché.</small></p>
+<!-- /fragment -->
+
+<!-- fragment: evaluation_view_p_reference_marche_absente_de_ce -->
+<p>Référence marché absente de cette ancienne étude : relancer l’évaluation pour connaître sa couverture.</p>
+<!-- /fragment -->
+
+<!-- fragment: evaluation_view_h_reference_marche_memes_matchs_ -->
+<h4>Référence marché · {evaluated} matchs comparés</h4><p>Brier du marché sans marge : {metric}. Le sous-échantillon ci-dessous est distinct du tableau complet ci-dessus.</p>
+<!-- /fragment -->
+
+<!-- fragment: evaluation_view_table_modele_matchs_apparies_bri -->
+<div class="table-wrap"><table><thead><tr><th>Modèle</th><th>Matchs appariés</th><th>Brier modèle</th><th>Brier marché</th><th>Écart modèle − marché</th></tr></thead><tbody>
+<!-- /fragment -->
+
+<!-- fragment: evaluation_view_tbody_markup -->
+</tbody></table></div><p>
+<!-- /fragment -->
+
+<!-- fragment: evaluation_view_p_matchs_exclus -->
+<p>Matchs exclus :&#32;
+<!-- /fragment -->
+
+<!-- fragment: evaluation_view_details_voir_la_calibration_de_l -->
+<details><summary>Voir la calibration de la baseline</summary><div class="table-wrap"><table><thead><tr><th>Issue</th><th>Probabilités annoncées</th><th>Matchs</th><th>Probabilité moyenne</th><th>Fréquence observée</th></tr></thead><tbody>
+<!-- /fragment -->
+
+<!-- fragment: evaluation_view_tbody_lecture_descriptive_petits -->
+</tbody></table></div><p>Lecture descriptive ; petits groupes instables. Aucune correction automatique des probabilités.</p></details><p><small>
+<!-- /fragment -->

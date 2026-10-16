@@ -30,8 +30,9 @@ d'un article : la lecture et les citations relèvent du journaliste. Présenter 
 le dossier, ses contradictions et ses manques. Ne pas archiver d'articles complets.
 
 Les nombres du modèle restent ceux des outils. Aucune majoration intuitive de
-probabilité, aucun score de confiance. Le coach expose en quoi une absence importante
-rend la baseline moins représentative, et peut maintenir l'abstention.
+probabilité, aucun score numérique de confiance. Tous les rôles et le coach analysent
+les faits sans les sorties Poisson ; les absences documentées motivent leur avis
+qualitatif ou une abstention. La comparaison au modèle est ajoutée après le verdict.
 
 Pour les coupes européennes, consulter aussi les comptes rendus des trois dernières
 prestations nationales de chaque club, à partir de la forme Python `domestic_form`.

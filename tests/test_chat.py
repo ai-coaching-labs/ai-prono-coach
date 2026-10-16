@@ -50,6 +50,31 @@ class ChatTests(unittest.TestCase):
         with patch('prono.chat.claude_path', return_value=None):
             self.assertFalse(claude_status()['available'])
 
+    def test_claude_usage_does_not_add_cache_to_uncached_input(self):
+        from prono.chat import claude_reply
+        usage={'input_tokens':12,'output_tokens':4,'cache_read_input_tokens':1000,'cache_creation_input_tokens':250}
+        output=subprocess.CompletedProcess([],0,json.dumps({'result':'Test','usage':usage}))
+        with patch('prono.chat.claude_path',return_value='/test/claude'),patch('prono.chat.subprocess.run',return_value=output):
+            result=claude_reply(self.ws,'Test','Test',[],web=False)
+        self.assertEqual(result['usage'],usage)
+
+    @unittest.skipUnless(shutil.which('node'),'Node requis pour vérifier le texte du compteur')
+    def test_usage_display_distinguishes_cache_and_preserves_legacy_reports(self):
+        script=(ROOT/'src/prono/assets/chat.js').read_text()
+        formatter=script[script.index('function usageLabel('):script.index('function renderTeam(')]
+        cases=[{'usage_available':True,'usage_schema_version':2,'input_tokens':12,'output_tokens':4,
+                'cache_read_input_tokens':1000,'cache_creation_input_tokens':250,
+                'cache_usage_complete':True,'usage_calls':3,'model_calls':3},
+               {'usage_available':True,'input_tokens':226304,'output_tokens':8567}]
+        code=formatter+'\nconsole.log(JSON.stringify('+json.dumps(cases)+'.map(usageLabel)));'
+        output=subprocess.run([shutil.which('node'),'-e',code],capture_output=True,text=True,check=True)
+        new,old=json.loads(output.stdout)
+        self.assertIn('12 tokens d’entrée hors cache',new)
+        self.assertIn('1000 lus en cache',new)
+        self.assertIn('250 mis en cache',new)
+        self.assertIn('234871 tokens rapportés, cache inclus',old)
+        self.assertIn('sans ventilation',old)
+
     def test_claude_reply_uses_account_web_only_and_separate_history(self):
         result = subprocess.CompletedProcess([], 0, json.dumps({'result': 'Sources à vérifier.', 'is_error': False}))
         with patch('prono.chat.claude_path', return_value='/local/claude'), patch('prono.chat.subprocess.run', return_value=result) as process, patch('urllib.request.urlopen') as ollama:
@@ -112,7 +137,33 @@ class ChatTests(unittest.TestCase):
         select.assert_called_once_with(self.ws,'next3','F1')
         system=json.loads(transport.call_args.args[0].data)['messages'][0]['content']
         self.assertEqual(json.loads(system.split('\n',1)[1])['period'],'next3')
-        self.assertIn('choix model_pick calculés par Python',system)
+        self.assertIn('choix statistique model_pick calculé par Python',system)
+        self.assertIn('pronostic qualitatif final du coach',system)
+
+    def test_dashboard_health_does_not_depend_on_statistics(self):
+        with socket.socket() as sock:
+            sock.bind(('127.0.0.1', 0)); port = sock.getsockname()[1]
+        runner = """
+import sys
+from prono import dashboard, tracking
+from prono.workspace import Workspace
+def unavailable(*args): raise ValueError('Statistiques indisponibles')
+dashboard.summary = unavailable
+tracking.start_worker = lambda *args: None
+dashboard.serve(Workspace(sys.argv[1]), int(sys.argv[2]))
+"""
+        process = subprocess.Popen([sys.executable, '-c', runner, str(self.ws.root), str(port)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        try:
+            self.assertIn('Dashboard', process.stdout.readline())
+            base = f'http://127.0.0.1:{port}'
+            with urllib.request.urlopen(base + '/api/health', timeout=2) as response:
+                self.assertEqual(json.load(response), {'ready': True})
+            with self.assertRaises(urllib.error.HTTPError) as error:
+                urllib.request.urlopen(base + '/api/summary', timeout=2)
+            self.assertEqual(error.exception.code, 400)
+            error.exception.close()
+        finally:
+            process.terminate(); process.communicate(timeout=5)
 
     def test_http_chat_token_and_origin_protect_refresh(self):
         with socket.socket() as sock:sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
@@ -216,4 +267,40 @@ serve(Workspace(sys.argv[1]),int(sys.argv[2]))
             report=latest_evaluation(self.ws)
             self.assertEqual(report['mode'],'observed');self.assertFalse(report['promoted'])
             self.assertEqual(report['leagues']['F1']['models']['poisson-baseline-v1']['evaluated'],0)
+        finally:process.terminate();process.communicate(timeout=5)
+
+    def test_understat_refresh_is_explicit_protected_and_does_not_capture_forecasts(self):
+        with socket.socket() as sock:
+            sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
+        runner='''
+import sys
+from prono import tracking,understat
+from prono.workspace import Workspace
+from prono.dashboard import serve
+tracking.start_worker=lambda *args:None
+def forbidden(*args):raise ValueError('Aucune prévision ne doit être capturée pour les xG')
+tracking.tick=forbidden
+understat.sync_xg=lambda ws,codes:{'requested_codes':codes,'imports':[{'status':'ok'},{'status':'ok'}]}
+serve(Workspace(sys.argv[1]),int(sys.argv[2]))
+'''
+        process=subprocess.Popen([sys.executable,'-c',runner,str(self.ws.root),str(port)],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        try:
+            self.assertIn('Dashboard',process.stdout.readline())
+            base=f'http://127.0.0.1:{port}'
+            with urllib.request.urlopen(base+'/chat') as response:
+                html=response.read().decode()
+                token=re.search('data-token="([^"]+)"',html).group(1)
+            self.assertIn('Actualiser les xG',html)
+            def post(league,auth=True):
+                headers={'Content-Type':'application/json','Origin':base}
+                if auth:headers['X-Prono-Token']=token
+                req=urllib.request.Request(base+'/api/refresh',data=json.dumps({'action':'xg','league':league}).encode(),headers=headers)
+                with urllib.request.urlopen(req) as response:return json.load(response)
+            with self.assertRaises(urllib.error.HTTPError) as exc:post('F1',False)
+            self.assertEqual(exc.exception.code,403);exc.exception.close()
+            self.assertEqual(post('F1')['understat']['requested_codes'],['F1'])
+            self.assertIsNone(post('UCL')['understat']['requested_codes'])
+            with self.assertRaises(urllib.error.HTTPError) as exc:post('N1')
+            self.assertEqual(exc.exception.code,400);exc.exception.close()
+            self.assertFalse(self.ws.path('data/tracking-status.json').exists())
         finally:process.terminate();process.communicate(timeout=5)

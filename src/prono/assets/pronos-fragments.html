@@ -1,0 +1,193 @@
+<!-- Static presentation fragments; dynamic values are escaped by their Python callers. -->
+
+<!-- fragment: render_div_les_pronos_du_modele -->
+<div class="section-head"><h2>Les pronos du modèle</h2><span>
+<!-- /fragment -->
+
+<!-- fragment: render_span_markup -->
+</span></div>
+<!-- /fragment -->
+
+<!-- fragment: render_nav_tabs -->
+<nav class="tabs">
+<!-- /fragment -->
+
+<!-- fragment: render_a_tab_value -->
+<a class="tab {value}" href="{link}">{label}</a>
+<!-- /fragment -->
+
+<!-- fragment: nav_close -->
+</nav>
+<!-- /fragment -->
+
+<!-- fragment: render_p_prono_s_calcule_s_rencontre_s_avant_cou -->
+<p>{picks} prono(s) calculé(s) · {len} rencontre(s) avant coup d’envoi · {candidates} simulation(s) fictive(s) à étudier.</p>
+<!-- /fragment -->
+
+<!-- fragment: render_div_notice -->
+<div class="notice">
+<!-- /fragment -->
+
+<!-- fragment: render_div_lissue_affichee_est_la_plus_probable_ -->
+ L’issue affichée est la plus probable du modèle, pas nécessairement une issue majoritaire. Aucun appel d’agent IA ni recherche d’actualité n’est effectué par cette page.</div>
+<!-- /fragment -->
+
+<!-- fragment: render_div_match_grid -->
+<div class="match-grid" style="margin-top:20px">
+<!-- /fragment -->
+
+<!-- fragment: render_article_vs -->
+<article class="match"><div class="match-top"><span>{value_0}</span><time>{value}</time></div><h3>{home}<em>vs</em>{away}</h3>
+<!-- /fragment -->
+
+<!-- fragment: render_div_eyebrow -->
+<div class="eyebrow">
+<!-- /fragment -->
+
+<!-- fragment: div_close -->
+</div>
+<!-- /fragment -->
+
+<!-- fragment: render_p_donnees_synthetiques_demonstration -->
+<p>Données SYNTHÉTIQUES · démonstration</p>
+<!-- /fragment -->
+
+<!-- fragment: render_p_prono_du_modele -->
+<p><b>Prono du modèle :&#32;
+<!-- /fragment -->
+
+<!-- fragment: render_b_markup -->
+</b></p><div class="prices">
+<!-- /fragment -->
+
+<!-- fragment: render_div -->
+<div><span>{value_0}</span><b>{value}%</b></div>
+<!-- /fragment -->
+
+<!-- fragment: render_div_details_du_calcul_et_de_lhistorique_e -->
+</div><details><summary>Détails du calcul et de l’historique</summary><p><small>Échantillons : {home} / {away} matchs. Calcul au {as_of}.</small></p>
+<!-- /fragment -->
+
+<!-- fragment: render_p_historique_ans_maximum_dont_matchs_sur_ -->
+<p><small>Historique : {years} ans maximum · dont {home_recent} / {away_recent} matchs sur les deux dernières années.</small></p>
+<!-- /fragment -->
+
+<!-- fragment: render_p_des_effectifs_anciens_participent_au_ca -->
+<p><small>Des effectifs anciens participent au calcul ; davantage de matchs ne garantit pas une meilleure prévision.</small></p>
+<!-- /fragment -->
+
+<!-- fragment: details_close -->
+</details>
+<!-- /fragment -->
+
+<!-- fragment: render_details_forme_en_championnat_contexte_des -->
+<details><summary>Forme en championnat · contexte des analystes</summary>
+<!-- /fragment -->
+
+<!-- fragment: render_p_markup -->
+<p><b>
+<!-- /fragment -->
+
+<!-- fragment: render_b -->
+</b> :&#32;
+<!-- /fragment -->
+
+<!-- fragment: p_close -->
+</p>
+<!-- /fragment -->
+
+<!-- fragment: small_open -->
+<small>
+<!-- /fragment -->
+
+<!-- fragment: render_small_markup_2 -->
+</small></details>
+<!-- /fragment -->
+
+<!-- fragment: render_details_cotes_enregistrees_1_n_2 -->
+<details><summary>Cotes enregistrées · 1 / N / 2</summary>
+<!-- /fragment -->
+
+<!-- fragment: p_open -->
+<p>
+<!-- /fragment -->
+
+<!-- fragment: render_small_cotes_indicatives_date_de_cotation_ -->
+<small>Cotes indicatives ; date de cotation inconnue.</small></details>
+<!-- /fragment -->
+
+<!-- fragment: render_p_cote_cotee_le -->
+<p>Cote : {odds} · {bookmaker}<br><small>Cotée le {quoted_at}</small></p>
+<!-- /fragment -->
+
+<!-- fragment: render_p_esperance_theorique_unite_par_unite_fic -->
+<p>Espérance théorique : {expected_return_per_unit} unité par unité fictive.</p>
+<!-- /fragment -->
+
+<!-- fragment: render_p_simulation_fictive -->
+<p><small>Simulation fictive :&#32;
+<!-- /fragment -->
+
+<!-- fragment: render_small_markup_3 -->
+</small></p>
+<!-- /fragment -->
+
+<!-- fragment: ul_open -->
+<ul>
+<!-- /fragment -->
+
+<!-- fragment: li_open -->
+<li>
+<!-- /fragment -->
+
+<!-- fragment: li_close -->
+</li>
+<!-- /fragment -->
+
+<!-- fragment: ul_close -->
+</ul>
+<!-- /fragment -->
+
+<!-- fragment: render_p_comprendre_ce_match -->
+<p><a class="pill" href="/chat?{coach_query}">Comprendre ce match →</a></p>
+<!-- /fragment -->
+
+<!-- fragment: render_p_markup_4 -->
+<p><small>
+<!-- /fragment -->
+
+<!-- fragment: render_small_poisson_baseline_v1_probabilites_no -->
+</small></p><footer>poisson-baseline-v1 · Probabilités non calibrées</footer></article>
+<!-- /fragment -->
+
+<!-- fragment: render_div_aucun_match_charge_pour_cette_periode -->
+<div class="empty"><h3>Aucun match chargé pour cette période</h3><p>Essayez une autre période ou une autre compétition. Le calendrier public ne couvre pas toutes les rencontres.</p>
+<!-- /fragment -->
+
+<!-- fragment: render_a -->
+<a class="pill" href="{link}">{label} →</a></div>
+<!-- /fragment -->
+
+<!-- fragment: render_details_championnats_non_evalues -->
+<details><summary>Championnats non évalués</summary><ul>
+<!-- /fragment -->
+
+<!-- fragment: render_ul_markup_3 -->
+</ul></details>
+<!-- /fragment -->
+
+<!-- fragment: render_div_pagination -->
+<div class="pagination">
+<!-- /fragment -->
+
+<!-- fragment: render_a_precedent -->
+<a href="{link}">← Précédent</a>
+<!-- /fragment -->
+
+<!-- fragment: render_span_page -->
+<span>Page {page_number} / {pages}</span>
+<!-- /fragment -->
+
+<!-- fragment: render_a_suivant -->
+<a href="{link}">Suivant →</a>
+<!-- /fragment -->

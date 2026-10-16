@@ -33,4 +33,7 @@ class MCPIntegration(unittest.IsolatedAsyncioTestCase):
                     result = await session.call_tool('analyze_match', {'event_id':'demo-1'})
                     self.assertFalse(result.isError)
                     self.assertEqual(json.loads(result.content[0].text)['status'], 'analysis_only')
+                    evaluation = await session.call_tool('model_evaluation', {})
+                    self.assertFalse(evaluation.isError)
+                    self.assertIn('market_comparison', json.loads(evaluation.content[0].text))
             self.assertFalse((root/'journal').exists())

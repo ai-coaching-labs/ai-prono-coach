@@ -1,5 +1,6 @@
 import copy
 import json
+import re
 import shutil
 import tempfile
 import threading
@@ -9,7 +10,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from prono.chat import coach_facts, claude_reply
-from prono.team import ROLES, TeamJobs, explicit_team_request, prepare_context, receipts, run_team
+from prono.team import ROLES, TeamJobs, explicit_team_request, prepare_context, prompt_context, receipts, run_team
 from prono.workspace import Workspace, read_record
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,6 +31,7 @@ class TeamTests(unittest.TestCase):
                         'paper_limits':self.ws.config['paper']}
 
     def execute(self, adapter, **kwargs):
+        kwargs.setdefault('strategy', 'full')
         with patch('prono.team.prepare_context',return_value=copy.deepcopy(self.context)), \
              patch('prono.team.claude_path',return_value='/test/claude'), \
              patch('prono.team.models',return_value=['test-local']):
@@ -53,6 +55,8 @@ class TeamTests(unittest.TestCase):
         for role,system,web in calls:
             self.assertEqual(web,ROLES[role][1])
         self.assertIn('Avis sports-journalist',next(s for r,s,w in calls if r=='lineup-analyst'))
+        self.assertNotIn('Avis market-analyst',next(s for r,s,w in calls if r=='lineup-analyst'))
+        self.assertIn('Avis lineup-analyst',next(s for r,s,w in calls if r=='match-analyst'))
         self.assertIn('Avis bookmaker-expert',calls[-1][1])
         record = read_record(self.ws.path('analyses/team-'+result['run_id']+'.md'))
         self.assertEqual(record['facts']['matches'][0]['probabilities'],self.context['matches'][0]['probabilities'])
@@ -60,6 +64,50 @@ class TeamTests(unittest.TestCase):
         self.assertEqual(len(receipts(self.ws,result['run_id'])[0]['roles']),8)
         restored = TeamJobs(self.ws).get(result['run_id'])
         self.assertEqual(restored['result']['answer'],result['answer'])
+
+    def test_prompt_omits_unconsulted_rows_but_preserves_complete_trace_and_dates(self):
+        context = copy.deepcopy(self.context)
+        row = {'event_id':'fixture-test', 'division':'F1', 'kickoff':'2026-10-10T18:00:00Z',
+               'exclusions':['Sample limited'], 'selected': True}
+        context['selection'] = {'considered': 2, 'rows': [row, {**row, 'event_id':'other'}]}
+        original = copy.deepcopy(context)
+        compact = prompt_context(context)
+        self.assertEqual(compact['selection']['rows'], [row])
+        self.assertEqual(compact['selection']['considered'], 2)
+        self.assertEqual(compact['selection']['unselected_rows_omitted'], 1)
+        self.assertEqual(compact['matches'], context['matches'])
+        self.assertEqual(context, original)
+
+    def test_missing_python_history_allows_qualitative_verdict_and_preserves_facts(self):
+        match = self.context['matches'][0]
+        match['model_pick'] = None
+        match['probabilities'] = None
+        match['forecast_details'] = None
+        match['kickoff'] = '2099-01-01T18:00:00Z'
+        self.context['context'] = [{'source': 'https://example.org/synthetic',
+                                    'notice': 'SYNTHÉTIQUE : forme domicile documentée'}]
+        expected = copy.deepcopy(self.context)
+        prompts = []
+        def adapter(ws, message, system, *args, **kwargs):
+            prompts.append(system)
+            answer = json.dumps({'verdicts':[{'event_id':'fixture-test','outcome':'home','score':[2,1],
+                                              'confidence':'faible','reason':'Forme domicile sourcée.',
+                                              'reserve':'Échantillon limité.'}]}) if 'MISSION DU RÔLE' not in system else 'Avis terrain.'
+            return {'answer': answer,
+                    'model': 'test'}
+        result = self.execute(adapter, strategy='adaptive')
+        self.assertEqual(len(prompts), 3)
+        self.assertTrue(all('CONSULTATION AVEUGLE' in p for p in prompts))
+        self.assertIn('une orientation qualitative 1/N/2', prompts[0])
+        self.assertIn('Tu ne connais pas le résultat du moteur statistique', prompts[-1])
+        self.assertIn('Ce scénario peut être proposé sans calcul Python', prompts[-1])
+        self.assertIn('La confiance porte sur le pronostic 1N2, pas sur ce score exact', prompts[-1])
+        self.assertNotIn('"model_pick":', prompts[-1])
+        record = read_record(self.ws.path('analyses/team-'+result['run_id']+'.md'))
+        self.assertEqual(record['facts'], expected)
+        self.assertEqual(record['answer'], result['answer'])
+        self.assertIn('faible', result['answer'])
+        self.assertEqual(record['llm_verdicts'][0]['outcome'], 'home')
 
     def test_user_enabled_roles_only_and_no_web_for_local(self):
         self.ws.path('config/workspace.user.toml').write_text('[agents]\nenabled = ["coach", "match-analyst"]\n')
@@ -113,6 +161,42 @@ class TeamTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'désactivé'):run_team(self.ws,'Test','claude','')
             call.assert_not_called()
 
+    def test_all_eight_roles_are_blind_and_comparison_is_added_only_after_final_call(self):
+        self.context['matches'][0].update(kickoff='2099-01-01T18:00:00Z',
+            probabilities={'home':.51234567891,'draw':.3,'away':.18765432109},
+            expected_goals={'home':'SECRET_RATE'}, comparison={'value':'SECRET_EDGE'},
+            forecast_details={'most_likely_scores':['SECRET_SCORE']},
+            reasons=['SECRET_REASON'],status='SECRET_STATUS',
+            domestic_form={'home':{'last5':{'wins':3}}})
+        self.context['selection']={'rows':[{'rank':'SECRET_RANK'}]}
+        calls=[]
+        def adapter(ws,message,system,previous,*args,**kwargs):
+            calls.append(system)
+            for secret in ('0.51234567891','SECRET_RATE','SECRET_EDGE','SECRET_SCORE','SECRET_REASON','SECRET_STATUS','SECRET_RANK'):
+                self.assertNotIn(secret,system)
+            data=json.loads(system.split('\n',1)[1].split('\n')[0])
+            self.assertNotIn('model_pick',json.dumps(data))
+            self.assertEqual(data['matches'][0]['domestic_form']['home']['last5']['wins'],3)
+            answer='Avis terrain sourcé.'
+            if 'MISSION DU RÔLE ' not in system:
+                answer=json.dumps({'verdicts':[{'event_id':'fixture-test','outcome':'away','score':[0,1],
+                                                'confidence':'faible','reason':'Forme observée.','reserve':'Absences incertaines.'}]})
+            return {'answer':answer,'model':'test'}
+        result=self.execute(adapter)
+        self.assertEqual(len(calls),8)
+        self.assertIn('désaccord avec Python',result['answer'])
+        record=read_record(self.ws.path('analyses/team-'+result['run_id']+'.md'))
+        self.assertEqual(record['blind_protocol'],'all-roles-blind-v8')
+        self.assertEqual(record['llm_verdicts'][0]['outcome'],'away')
+        self.assertEqual(record['facts']['matches'][0]['model_pick'],'home')
+
+    def test_changing_only_python_predictions_keeps_blind_reports_reusable(self):
+        def adapter(*args,**kwargs):return {'answer':'Avis https://example.test/source','model':'test'}
+        self.execute(adapter)
+        self.context['matches'][0].update(model_pick='away',probabilities={'home':.1,'draw':.2,'away':.7})
+        result=self.execute(adapter)
+        self.assertEqual(result['stats']['reused_reports'],3)
+
     def test_scope_is_bounded_and_no_matches_prevents_call(self):
         facts = copy.deepcopy(self.context)
         facts['matches'] = [dict(facts['matches'][0],event_id=str(i)) for i in range(6)]
@@ -128,7 +212,7 @@ class TeamTests(unittest.TestCase):
     def test_selected_match_is_filtered_before_thirty_match_limit(self):
         rows=[]
         for i in range(40):
-            fixture={'event_id':str(i),'home':'A','away':'B','kickoff':'2026-10-10T18:00:00Z','source':'test'}
+            fixture={'event_id':str(i),'home':'A','away':'B','kickoff':'2099-01-01T18:00:00Z','source':'test'}
             rows.append({'fixture':fixture,'division':'F1','model':{},'status':'abstention','outcome':None,'reasons':[],'synthetic':True})
         with patch('prono.pronos.selections',return_value={'matches':rows,'notice':'Test'}):
             result=coach_facts(self.ws,event_id='39')
@@ -176,8 +260,47 @@ class TeamTests(unittest.TestCase):
             calls.append(role);return {'answer':'Test','model':'test'}
         with patch('prono.team.prepare_context',return_value=self.context),patch('prono.team.claude_path',return_value='/test/claude'),patch('prono.team.call_model',side_effect=adapter):
             result=run_team(self.ws,'Prépare mes pronos avec actualités, absents et cotes','claude','',strategy='adaptive')
-        self.assertEqual(set(calls),{'bookmaker-expert','sports-journalist','lineup-analyst','match-analyst','coach'})
-        self.assertEqual(result['stats']['model_calls'],5)
+        self.assertEqual(set(calls),{'sports-journalist','match-analyst','coach'})
+        self.assertEqual(result['stats']['model_calls'],3)
+
+    def test_default_team_is_three_calls_and_specialist_can_be_requested(self):
+        from prono.team import selected_roles
+        self.assertEqual(set(selected_roles(self.ws, 'Prépare mes pronos, absents et cotes', 'adaptive')),
+                         {'sports-journalist', 'match-analyst'})
+        self.assertEqual(set(selected_roles(self.ws, 'Demande à l’expert bookmaker de vérifier les cotes', 'adaptive')),
+                         {'sports-journalist', 'match-analyst', 'bookmaker-expert'})
+        calls = []
+        def adapter(*args, **kwargs):
+            calls.append(args[2])
+            return {'answer':'Test','model':'test'}
+        with patch('prono.team.prepare_context', return_value=copy.deepcopy(self.context)), patch('prono.team.models', return_value=['test-local']), patch('prono.team.call_model', side_effect=adapter):
+            result = run_team(self.ws, 'Analyse les matchs choisis', 'local', 'test-local')
+        self.assertEqual(result['stats']['model_calls'], 3)
+        self.assertEqual(len(calls), 3)
+
+    def test_actual_prepare_button_does_not_request_performance_analyst(self):
+        from prono.team import selected_roles
+        script=(ROOT/'src/prono/assets/chat.js').read_text()
+        handler=script[script.index('document.getElementById("prepare").onclick'):]
+        message=json.loads(re.search(r'document\.getElementById\("question"\)\.value\s*=\s*("[^\n]+")\s*;',handler).group(1))
+        self.assertIn('journaliste',message)
+        self.assertEqual(set(selected_roles(self.ws,message,'adaptive')),{'sports-journalist','match-analyst'})
+        self.assertIn('performance-analyst',selected_roles(self.ws,'Analyse mon journal fictif et mon bilan','adaptive'))
+
+    def test_usage_keeps_cache_separate_and_records_each_role(self):
+        usage={'input_tokens':10,'output_tokens':5,'cache_read_input_tokens':30,'cache_creation_input_tokens':20}
+        def adapter(*args,**kwargs):return {'answer':'Test','model':'test','usage':dict(usage)}
+        result=self.execute(adapter,strategy='adaptive')
+        stats=result['stats']
+        self.assertEqual(stats['model_calls'],3)
+        self.assertEqual(stats['input_tokens'],30)
+        self.assertEqual(stats['output_tokens'],15)
+        self.assertEqual(stats['cache_read_input_tokens'],90)
+        self.assertEqual(stats['cache_creation_input_tokens'],60)
+        self.assertEqual(stats['usage_calls'],3)
+        self.assertTrue(stats['cache_usage_complete'])
+        record=read_record(self.ws.path('analyses/team-'+result['run_id']+'.md'))
+        self.assertTrue(all(r['usage']==usage for r in record['reviews']))
 
     def test_recent_sourced_cache_is_explicit_and_force_refresh_ignores_it(self):
         def adapter(*args,**kwargs):return {'answer':'Test https://example.test/source','model':'test','usage':{'input_tokens':10,'output_tokens':5}}
@@ -191,7 +314,7 @@ class TeamTests(unittest.TestCase):
 
     def test_cache_expires_and_changed_facts_invalidate_it(self):
         def adapter(*args,**kwargs):return {'answer':'Test https://example.test/source','model':'test'}
-        self.execute(adapter);self.context['matches'][0]['probabilities']={'home':.4,'draw':.3,'away':.3}
+        self.execute(adapter);self.context['matches'][0]['domestic_form']={'home':{'last5':{'wins':4}}}
         changed=self.execute(adapter);self.assertEqual(changed['stats']['reused_reports'],0)
         from datetime import timedelta
         from prono.workspace import utcnow
@@ -208,4 +331,15 @@ class TeamTests(unittest.TestCase):
         form.update(as_of='2026-10-12T12:01:00Z',last_match_age_days=2.0007)
         cached=self.execute(adapter);self.assertEqual(cached['stats']['reused_reports'],3)
         form['last5']['wins']=4
+        changed=self.execute(adapter);self.assertEqual(changed['stats']['reused_reports'],0)
+
+    def test_xg_clock_preserves_cache_but_changed_xg_invalidates_it(self):
+        self.context['matches'][0]['understat_xg']={'home':{'as_of':'2026-10-15T12:00:00Z',
+            'available':True,'last5':{'played':5,'xg_for':7.0},'knowledge_dates':['2026-10-15T10:00:00Z']}}
+        def adapter(*args,**kwargs):return {'answer':'Test https://example.test/source','model':'test'}
+        self.execute(adapter)
+        xg=self.context['matches'][0]['understat_xg']['home']
+        xg['as_of']='2026-10-15T12:01:00Z'
+        cached=self.execute(adapter);self.assertEqual(cached['stats']['reused_reports'],3)
+        xg['last5']['xg_for']=6.0
         changed=self.execute(adapter);self.assertEqual(changed['stats']['reused_reports'],0)

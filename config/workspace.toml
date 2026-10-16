@@ -4,6 +4,7 @@ responses = "auto"
 
 [agents]
 enabled = ["coach", "match-analyst", "market-analyst", "risk-manager", "performance-analyst", "bookmaker-expert", "sports-journalist", "lineup-analyst"]
+# Équipe essentielle : journaliste/effectifs, analyste sportif, coach ; renforts sur demande.
 strategy = "adaptive"
 cache_minutes = 30
 
@@ -13,9 +14,11 @@ interval_seconds = 300
 # Uniquement les résultats publics des matchs suivis, après leur coup d'envoi.
 auto_refresh_results = true
 result_refresh_minutes = 60
+# Jalon de revue, sans changement automatique du modèle.
+min_settled_before_model_review = 300
 
 [evaluation]
-leagues = ["F1", "F2", "E0"]
+leagues = ["F1", "F2", "E0", "E1", "E2", "E3", "EC", "D1", "D2", "I1", "I2", "SP1", "SP2", "N1", "B1", "P1", "T1", "G1", "SC0", "SC1", "SC2", "SC3", "UCL", "UEL", "UECL"]
 
 [europe]
 # Archives propres à chaque coupe ; les effectifs anciens limitent leur pertinence.

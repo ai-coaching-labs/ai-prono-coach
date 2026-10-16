@@ -8,3 +8,10 @@ Le backtest est chronologique et ne mesure pas la rentabilité sans cotes histor
 Ne pas sélectionner après coup les seuls matchs réussis ni changer des prédictions archivées.
 Les résultats d'une démo synthétique n'évaluent que le fonctionnement du logiciel.
 Retour au coach : métriques de l'outil, taille d'échantillon et ce qu'on peut conclure.
+
+Pendant une consultation pré-match, ce rôle travaille en aveugle aux prévisions Poisson,
+comme tous les autres rôles et le coach. Ne pas demander ni reconstituer le choix,
+les probabilités, les scores, le BTTS ou l’espérance du modèle. Les statistiques
+observées et les sources restent utilisables. L’application compare les avis au
+modèle après le verdict. Une lecture de bilan historique explicitement demandée
+reste distincte d’une nouvelle prédiction.
