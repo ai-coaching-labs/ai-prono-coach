@@ -591,3 +591,16 @@ input {
   vertical-align: middle;
   border-radius: 8px;
 }
+
+.combo-match {
+  background: white;
+  border: 1px solid #dce4df;
+  border-radius: 10px;
+  margin: 12px 0;
+  padding: 14px;
+}
+.combo-match label { display: block; margin: 8px 0; }
+.combo-match input[type="checkbox"] { width: auto; display: inline; }
+#combo-answer { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
+#combo-progress { padding: 12px; background: #e9f0e9; border-radius: 8px; }
+#combo-budget[hidden] { display: none; }

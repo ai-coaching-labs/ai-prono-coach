@@ -29,6 +29,7 @@ def page(ws, params=None, token=None):
         "coverage",
         "team",
         "pronos",
+        "accumulators",
         "tracking",
         "evaluation",
     ):
@@ -113,6 +114,7 @@ def page(ws, params=None, token=None):
         )
     titles = {
         "pronos": "Les pronos",
+        "accumulators": "Les combinés fictifs",
         "tracking": "Mon suivi",
         "matches": "Le calendrier",
         "results": "Les résultats",
@@ -157,7 +159,7 @@ def page(ws, params=None, token=None):
         )
 
     tabs = tab_links(
-        [("pronos", "Pronos"), ("tracking", "Suivi"), ("matches", "Calendrier")]
+        [("pronos", "Pronos"), ("accumulators", "Combinés"), ("tracking", "Suivi"), ("matches", "Calendrier")]
     )
     advanced = tab_links(
         [
@@ -225,6 +227,23 @@ def page(ws, params=None, token=None):
         from .lab_dashboard import evaluation_view
 
         content = evaluation_view(ws, code, esc, token)
+    elif tab == "accumulators":
+        from .accumulators import propose, render
+        from .accumulator_preparation import preparation, render_preparation
+
+        budget = params.get("budget", "0")
+        horizon = params.get("horizon", "today")
+        ticket_mode = params.get("format", "auto")
+        quote_mode = params.get("quotes", "indicative")
+        plan = preparation(ws, horizon, code, now, quote_mode=quote_mode)
+        controls = ""
+        content = render_preparation(plan, esc, zone, options, ticket_mode, params.get('budget', ''))
+        if 'budget' in params:
+            result = propose(ws, budget, horizon, code, query, now, ticket_mode=ticket_mode,
+                             allow_indicative=quote_mode == 'indicative',
+                             event_ids=json.loads(params['event_ids']) if params.get('event_ids') else None)
+            content += '<section id="combo-results" tabindex="-1">' + render(result, esc, zone,
+                              coach_url='/chat?' + urlencode({'league': code, 'period': horizon})) + '</section>'
     elif tab == "pronos":
         from .pronos import selections, render
 
@@ -595,6 +614,7 @@ def page(ws, params=None, token=None):
             "content": content,
             "date": now.astimezone(zone).strftime("%d.%m.%Y"),
             "scripts": (
+                '<script src="/accumulators.js"></script>' if tab == "accumulators" else
                 html_fragment("hub_dashboard-fragments.html", "page_script_markup")
                 if tab in ("tracking", "evaluation")
                 else ""

@@ -4,16 +4,16 @@ from .workspace import timestamp, number
 
 
 def validate_count(value):
-    if type(value) is not int or not 1 <= value <= 5:
-        raise ValueError("Choisir de 1 à 5 matchs à approfondir.")
+    if type(value) is not int or not 1 <= value <= 15:
+        raise ValueError("Choisir de 1 à 15 matchs à approfondir.")
     return value
 
 
 def validate_event_ids(event_ids, event_id=None):
     if event_ids is None:
         return None
-    if event_id or not isinstance(event_ids, list) or not 1 <= len(event_ids) <= 5:
-        raise ValueError("Choisir de 1 à 5 matchs manuellement, sans sélection unique simultanée.")
+    if event_id or not isinstance(event_ids, list) or not 1 <= len(event_ids) <= 15:
+        raise ValueError("Choisir de 1 à 15 matchs manuellement, sans sélection unique simultanée.")
     if any(not isinstance(i, str) or not i.strip() or len(i) > 100 for i in event_ids):
         raise ValueError("Identifiants de matchs invalides.")
     if len(set(event_ids)) != len(event_ids):

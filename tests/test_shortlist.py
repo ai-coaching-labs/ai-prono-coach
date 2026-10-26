@@ -123,7 +123,7 @@ class ShortlistTests(unittest.TestCase):
         model.assert_not_called()
 
     def test_count_limits_and_tied_probabilities_are_not_arbitrary_choices(self):
-        for invalid in [True,0,6,'3',3.0]:
+        for invalid in [True,0,16,'3',3.0]:
             with self.assertRaises(ValueError):validate_count(invalid)
         a=row('tie');a['model']['probabilities']={'home':.45,'draw':.45,'away':.1}
         self.assertEqual(rank_matches([a],{},NOW)[1]['selected'],0)
@@ -148,3 +148,14 @@ class ShortlistTests(unittest.TestCase):
         facts=json.loads(model.call_args.args[2].split('\n',1)[1])
         self.assertEqual([r['event_id'] for r in facts['matches']],['manual'])
         self.assertEqual(facts['selection']['mode'],'manual')
+
+    def test_fifteen_manual_matches_keep_all_context_dossiers(self):
+        rows = [row(i, .6) for i in range(15)]
+        ids = [r['fixture']['event_id'] for r in rows]
+        dossiers = [{'event_id': ident} for ident in ids]
+        with patch('prono.pronos.selections', return_value={'created_at':NOW, 'matches':rows, 'notice':'Test'}), patch('prono.context.contexts', return_value=dossiers):
+            context = prepare_context(self.ws, 'UCL', 'next3', selection_count=15, event_ids=ids)
+        self.assertEqual(len(context['matches']), 15)
+        self.assertEqual(len(context['context']), 15)
+        with self.assertRaises(ValueError):
+            rank_matches(rows, {}, NOW, event_ids=ids + ['overflow'])

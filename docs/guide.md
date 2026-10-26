@@ -394,7 +394,7 @@ observations, triées par probabilité Python, écart puis échantillon récent.
 sert qu’à départager. Les cotes indicatives n’autorisent aucun classement par rentabilité.
 
 Le chat affiche la liste proposée, les critères et les exclusions avant de lancer les
-agents. On peut demander de un à cinq matchs ; une liste insuffisante n’est pas remplie
+agents. On peut demander de un à quinze matchs ; une liste insuffisante n’est pas remplie
 avec des choix faibles. Un match manuel reste possible et conserve ses avertissements.
 La règle, les rangs et les exclusions sont archivés avec chaque nouvelle consultation et
 restitués dans ses traces serveur. Les anciennes archives ne sont pas réécrites.
@@ -413,3 +413,98 @@ La forme nationale des clubs engagés en Europe est un contexte descriptif : 5 e
 Les résultats européens acceptés sont confirmés à 90 minutes ; prolongations, tirs au but et heures incertaines sont exclus. Le calendrier et les cotes publiques se synchronisent explicitement avec `sync-leagues --leagues UCL UEL UECL`. Les cotes sans heure de cotation vérifiable restent indicatives et ne permettent aucune simulation.
 
 Le MCP lit uniquement le workspace indiqué dans sa configuration. Il ne consolide pas les sous-workspaces par compétition et ne représente pas le bilan prospectif global : une réponse vide à la racine ne prouve pas une absence de prévisions suivies.
+
+## Combinés fictifs à partir des avis coach
+
+Dans l’onglet **Combinés**, saisir un budget fictif maximum et choisir aujourd’hui
+ou les trois prochains jours. Le générateur propose au plus cinq doubles ou triples à unité
+fixe, sans match ni équipe partagés entre les tickets. Chaque ticket utilise les
+cotes du même bookmaker ; leur produit reste indicatif, sans offre de combiné vérifiée.
+
+Il réutilise uniquement les verdicts coach archivés selon le protocole aveugle.
+Le dernier avis prime, y compris une abstention. L’identité et l’horaire du match
+doivent être inchangés, l’avis récent (durée maximale de validité des cotes), la
+confiance modérée ou élevée, les données non synthétiques et les cotes valides.
+Les exclusions habituelles de simulation s’appliquent ; l’espérance théorique du
+choix du coach doit aussi être positive. Un désaccord avec le choix Python reste
+possible : la probabilité affichée est celle de l’issue choisie par le coach.
+
+Le budget utilisable est plafonné par le solde fictif et l’exposition restante,
+agrégés sur le hub et ses compétitions, avec le capital et le plafond du hub.
+Les propositions ne réservent aucun budget et ne sont pas inscrites au journal.
+Répéter la demande ne crée pas de tickets supplémentaires ni de nouvelles mises.
+
+```bash
+./scripts/prono accumulators --budget 5 --league F1 --period today --format auto
+```
+
+Les probabilités combinées et espérances sont calculées sous hypothèse
+**d’indépendance non vérifiée**, à partir de poisson-baseline-v1 inchangé.
+Le format `auto` compare doubles et triples ; `doubles` et `triples` limitent le format.
+Le tri utilise la croissance logarithmique espérée du solde fictif libre pour
+l’unité fixe : `p × log(1 + f × (cote − 1)) + (1 − p) × log(1 − f)`, avec
+`f = unité / solde libre` et `p` le produit des probabilités. Ce critère tient
+compte des cotes, des probabilités et du risque de perte ; les valeurs nulles ou
+négatives sont exclues, même avec une espérance arithmétique positive. Engager
+l’intégralité du solde libre est exclu. La mise fixe ne change pas.
+Les tickets sont retenus dans cet ordre sans réutiliser d’équipe. Ce classement
+individuel est une heuristique, sans optimisation globale du portefeuille ni
+garantie de rentabilité ; il ne force pas la présence des deux formats. Un taux de réussite global de 60 % ne donne pas
+la probabilité de chaque match. Aucun combiné n’est forcé pour utiliser le budget.
+Aucun appel réseau ou modèle supplémentaire n’est effectué.
+
+### Parcours intégré et cotes indicatives
+
+L’onglet Combinés commence désormais par la préparation, avant de demander un budget :
+
+1. Choisir la compétition et la période ; deux à quinze matchs sont cochés pour la consultation.
+   Les données synthétiques, les matchs commencés, les identifiants ambigus, les historiques
+   insuffisants sont écartés dès cette étape. Les coupes européennes restent incluses,
+   avec une réserve sur l’absence de validation spécifique du modèle.
+2. Cliquer sur **Lancer Claude et l’équipe sur ma sélection**. Ce clic appelle Claude Code,
+   avec les rôles activés du parcours essentiel, et lance la recherche d’actualité prévue
+   par le protocole existant. Les avis sont rendus en aveugle puis archivés. Le progrès,
+   les erreurs et la reprise d’une consultation en cours restent dans cet écran.
+3. Si au moins un ticket est admissible, indiquer le budget fictif et construire les doubles
+   ou triples sur les matchs cochés. La génération ne relance pas Claude.
+
+À la demande de l’utilisateur, **Exploration · cotes disponibles, même indicatives** est
+le mode par défaut de ce parcours. Les offres publiques disponibles peuvent servir aux
+projections même sans heure de cotation vérifiable, ou avec une cote datée devenue ancienne.
+Le bookmaker le plus représenté dans les offres de la sélection est privilégié, avec
+un départage alphabétique ; chaque ticket conserve un bookmaker unique. Une heure inconnue
+reste inconnue ; la collecte est affichée séparément. Les prix, gains et espérances restent
+indicatifs. Ces propositions n’autorisent aucune mise validée et ne créent aucune entrée
+au journal. Les contrôles du journal fictif restent inchangés. Cette option ne modifie
+ni poisson-baseline-v1 ni le protocole aveugle.
+
+Le mode **Cotes datées uniquement** conserve le contrôle de fraîcheur. La correction
+manuelle des cotes est facultative dans le parcours exploratoire : elle exige les trois
+issues du même bookmaker au même instant, une heure de cotation déclarée avec fuseau et
+un lien source. La date de saisie n’est jamais utilisée comme heure de cotation. Chaque
+saisie conserve une capture de la nouvelle ligne et de la précédente avant remplacement ;
+ces données sont déclaratives, sans vérification externe du bookmaker.
+
+Aucune consultation, collecte de cotes ou dépense de quota ne démarre à l’ouverture.
+Le CLI conserve le contrôle strict par défaut ; `accumulators --budget 5 --indicative`
+active explicitement les projections indicatives à partir des avis déjà archivés.
+
+La sélection des matchs est automatique par défaut : jusqu’à quinze matchs avec cotes
+utilisables, un même bookmaker et des équipes distinctes. Le pré-tri compare les
+probabilités Python et les cotes par utilité logarithmique à unité fixe rapportée au
+capital fictif initial ; il ne constitue pas un pronostic du coach et n’optimise pas
+le portefeuille global. Les spécialistes ne reçoivent ni ce classement ni ses critères.
+Le serveur recalcule la sélection au lancement ; aucun identifiant manuel n’est requis.
+Le choix manuel reste accessible dans **Voir la sélection ou choisir mes matchs (facultatif)**.
+Le bouton principal est **Analyser la sélection automatique avec Claude**.
+
+En exploration, les pronostics de confiance faible restent désormais disponibles pour
+construire des **scénarios comparatifs**. Les espérances et critères de risque nuls ou
+négatifs sont affichés avec leurs réserves, sans empêcher la comparaison. Le classement
+reste calculé par Python ; aucune confiance ou probabilité n’est relevée. Les abstentions,
+verdicts invalides, avis périmés, matchs commencés et données insuffisantes restent exclus.
+Le mode à filtres stricts et le journal fictif conservent leurs contrôles. Un scénario
+à espérance négative est explicitement présenté comme défavorable selon le modèle,
+sans validation de mise ni inscription au journal.
+
+Les Coupes d’Europe restent admissibles à la préparation et aux propositions de combinés fictifs. L’absence de validation spécifique de la baseline européenne est signalée comme réserve, sans exclusion automatique. Les autres contrôles et les limites d’exposition restent applicables.

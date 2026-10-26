@@ -147,6 +147,8 @@ def serve(ws, port=8766):
                     "/chat",
                     "/chat.js",
                     "/dashboard.js",
+                    "/accumulators.js",
+                    "/api/accumulators/preparation",
                     "/api/evaluation",
                     "/api/tracking",
                     "/api/chat/options",
@@ -175,6 +177,15 @@ def serve(ws, port=8766):
                     from .lab_dashboard import SCRIPT
 
                     payload = SCRIPT.encode()
+                elif parsed.path == "/accumulators.js":
+                    payload = asset_text("accumulators.js").encode()
+                elif parsed.path == "/api/accumulators/preparation":
+                    from .accumulator_preparation import preparation
+
+                    params = {key: values[-1] for key, values in parse_qs(parsed.query).items()}
+                    payload = json.dumps(preparation(ws, params.get('period', 'today'),
+                        params.get('league', 'all'), quote_mode=params.get('quotes', 'indicative')),
+                        ensure_ascii=False).encode()
                 elif job_path:
                     payload = json.dumps(
                         team_jobs.get(parsed.path.rsplit("/", 1)[-1]),
@@ -289,7 +300,7 @@ def serve(ws, port=8766):
                     if parsed.path == "/icon.svg"
                     else (
                         "text/javascript; charset=utf-8"
-                        if parsed.path in ("/chat.js", "/dashboard.js")
+                        if parsed.path in ("/chat.js", "/dashboard.js", "/accumulators.js")
                         else (
                             "text/html; charset=utf-8"
                             if parsed.path in ("/", "/chat")
@@ -326,6 +337,8 @@ def serve(ws, port=8766):
                 "/api/refresh",
                 "/api/tracking",
                 "/api/evaluation",
+                "/api/accumulators/quote",
+                "/api/accumulators/prepare",
             ):
                 self.send_error(404)
                 return
@@ -336,7 +349,20 @@ def serve(ws, port=8766):
                 body = json.loads(self.rfile.read(length))
                 if not isinstance(body, dict):
                     raise ValueError("Une demande JSON structurée est requise.")
-                if self.path == "/api/evaluation":
+                if self.path == "/api/accumulators/quote":
+                    from .accumulator_preparation import save_quote
+
+                    if not operation_lock.acquire(blocking=False):
+                        raise ValueError('Une mise à jour est déjà en cours.')
+                    try:
+                        result = save_quote(ws, body)
+                    finally:
+                        operation_lock.release()
+                elif self.path == "/api/accumulators/prepare":
+                    from .accumulator_preparation import start_preparation
+
+                    result = start_preparation(ws, body, team_jobs)
+                elif self.path == "/api/evaluation":
                     result = evaluation_jobs.start(
                         body.get("league", "all"), body.get("mode", "snapshot")
                     )

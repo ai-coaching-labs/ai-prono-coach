@@ -1,0 +1,30 @@
+<!-- fragment: page -->
+<section id="combo-preparation" data-league="{league}" data-period="{period}" data-quote-mode="{quote_mode}" data-ready="{ready}">
+<h2>1. Préparer les matchs</h2>
+<form method="get" class="filters"><input type="hidden" name="tab" value="accumulators"><label>Compétition<select name="league">{options}</select></label><label>Période<select name="horizon"><option value="today" {today}>Aujourd’hui</option><option value="next3" {next3}>Demain à J+3</option></select></label><label>Cotes<select name="quotes"><option value="indicative" {indicative_selected}>Exploration · cotes disponibles, même indicatives</option><option value="verified" {verified_selected}>Cotes datées uniquement</option></select></label><button type="submit">Préparer ma sélection</button></form>
+<p>{scanned} matchs examinés · {count} exploitables pour cette préparation · {quote_ready} avec cotes utilisables dans ce mode · {coach_ready} avec avis coach récent.</p>
+<p><strong>{automatic_count} matchs sélectionnés automatiquement.</strong> L’application compare les cotes et les probabilités Python, puis retient jusqu’à quinze matchs avec un même bookmaker et des équipes distinctes. Les spécialistes donnent ensuite leur avis sans recevoir les prévisions ni les critères du tri.</p>
+<details id="combo-manual"><summary>Voir la sélection ou choisir mes matchs (facultatif)</summary><label>Sélection<select id="combo-selection-mode"><option value="auto">Automatique · l’application choisit</option><option value="manual">Manuelle · je choisis</option></select></label><div id="combo-matches">{rows}</div></details>
+<details><summary>Matchs écartés dès la préparation</summary><ul>{excluded}</ul></details>
+<h2>2. Faire travailler Claude et l’équipe</h2>
+<p>Le bouton lance une consultation Claude Code sur la sélection automatique (ou ton choix manuel) : journaliste et effectifs, analyste sportif, puis coach, selon les rôles activés. Cette consultation utilise ton compte Claude. Aucune consultation ne démarre à l’ouverture de la page.</p>
+<button type="button" id="combo-analyze">Analyser la sélection automatique avec Claude</button>
+<p id="combo-progress" role="status">{message}</p>
+<details id="combo-verdict" hidden><summary>Dernier avis de l’équipe</summary><pre id="combo-answer"></pre></details>
+<h2>3. Construire les combinés fictifs</h2>
+<p>Les avis favorables ne garantissent pas un ticket : abstentions, cotes, historique, budget et exposition restent contrôlés.</p>
+<form id="combo-budget" method="get" action="/#combo-results" {budget_hidden}><input type="hidden" name="tab" value="accumulators"><input type="hidden" name="league" value="{league}"><input type="hidden" name="horizon" value="{period}"><input type="hidden" name="quotes" value="{quote_mode}"><input type="hidden" name="event_ids" id="combo-event-ids"><label>Budget fictif maximum<input type="number" name="budget" value="{budget}" min="0.01" max="1000000" step="0.01" required></label><label>Format<select name="format"><option value="auto" {auto}>Automatique · doubles et triples</option><option value="doubles" {doubles}>Doubles uniquement</option><option value="triples" {triples}>Triples uniquement</option></select></label><button type="submit">Proposer mes combinés fictifs</button></form>
+<p>En exploration, les cotes sans heure vérifiable restent indicatives : les gains affichés sont des projections. Aucune mise n’est validée ni inscrite au journal.</p><p>Une unité fixe par ticket, aucun argent réel. Les probabilités combinées supposent une indépendance non vérifiée ; aucune rentabilité n’est démontrée.</p>
+</section>
+<!-- /fragment -->
+<!-- fragment: match -->
+<article class="combo-match" data-event-id="{event_id}" data-division="{division}" data-kickoff="{kickoff}" data-quote-ready="{quote_ready}" data-auto-selected="{auto_selected}">
+<label><input type="checkbox" class="combo-choice" {checked}> <strong>{match}</strong> · {kickoff_local}</label>
+<p>{quote_status} · {coach_status}</p><p>{coach_reason}</p><p>{model_notice}</p>
+<details><summary>Renseigner ou corriger les cotes 1N2</summary>
+<form class="combo-quote"><label>Bookmaker<input name="bookmaker" maxlength="100" value="{bookmaker}" required></label><label>Cote 1<input name="home" type="number" min="1.000001" max="10000" step="any" value="{home}" required></label><label>Cote N<input name="draw" type="number" min="1.000001" max="10000" step="any" value="{draw}" required></label><label>Cote 2<input name="away" type="number" min="1.000001" max="10000" step="any" value="{away}" required></label><label>Heure réelle de cotation (heure locale)<input name="quoted_at" type="datetime-local" value="{quoted_local}" required></label><label>Lien source du bookmaker<input name="source_url" type="url" value="{source_url}" required></label><p>Les trois cotes doivent venir du même bookmaker et du même instant. Ne remplace pas une date inconnue par l’heure actuelle. La saisie est déclarative, sans vérification externe. Source actuelle : {quote_source}.</p><button type="submit">Enregistrer ces cotes</button></form>
+</details></article>
+<!-- /fragment -->
+<!-- fragment: excluded -->
+<li>{count} match(s) : {reason}</li>
+<!-- /fragment -->

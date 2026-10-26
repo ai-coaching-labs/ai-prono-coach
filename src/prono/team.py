@@ -161,7 +161,7 @@ def prepare_context(ws, league, period, event_id=None, selection_count=None, eve
             "Aucun match ne satisfait la sélection automatique. Consultez les exclusions ou choisissez un match manuellement."
         )
     ids = {r["event_id"] for r in context["matches"]}
-    context["context"] = [r for r in context["context"] if r["event_id"] in ids][:5]
+    context["context"] = [r for r in context["context"] if r["event_id"] in ids]
     from .leagues import league_workspace
     from .journal import summary
 

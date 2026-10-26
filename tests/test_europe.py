@@ -86,7 +86,8 @@ class EuropeTests(unittest.TestCase):
         result=selections(self.ws,'next3','UCL',now=self.now)
         self.assertEqual(len(result['matches']),1);row=result['matches'][0]
         self.assertFalse(row['model']['available']);self.assertIsNone(row['outcome']);self.assertEqual(row['status'],'abstention')
-        self.assertTrue(any('exploratoire' in r for r in row['reasons']))
+        self.assertIn('exploratoire', row['context_notice'])
+        self.assertFalse(any('Coupe d’Europe' in r for r in row['reasons']))
         from prono.chat import coach_facts
         with patch('prono.pronos.selections',return_value=result):facts=coach_facts(self.ws,'UCL','next3')
         self.assertEqual(facts['matches'][0]['sample_period'],row['model']['sample_period'])

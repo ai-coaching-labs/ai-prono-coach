@@ -54,6 +54,12 @@ def main(argv=None):
     sl.add_argument("previous_id")
     sl.add_argument("current_id")
     sub.add_parser("summary")
+    combos = sub.add_parser("combinés", aliases=["accumulators"], help="Proposer des doubles et triples fictifs, sans écriture ni réseau")
+    combos.add_argument("--budget", type=float, required=True)
+    combos.add_argument("--league", default="all")
+    combos.add_argument("--period", choices=["today", "next3"], default="today")
+    combos.add_argument("--format", dest="ticket_mode", choices=["auto", "doubles", "triples"], default="auto")
+    combos.add_argument("--indicative", action="store_true", help="Explorer les cotes disponibles sans valider de mise")
     sub.add_parser("report")
     sub.add_parser("sync-odds")
     history = sub.add_parser(
@@ -148,6 +154,11 @@ def main(argv=None):
             from .demo import seed
 
             result = seed(ws)
+        elif args.command in ("combinés", "accumulators"):
+            from .accumulators import propose
+
+            result = propose(ws, args.budget, args.period, args.league, ticket_mode=args.ticket_mode,
+                             allow_indicative=args.indicative)
         elif args.command == "fixtures":
             result = fixtures(ws)
         elif args.command == "today":
