@@ -115,10 +115,6 @@ def selections(ws, period="today", league="all", query="", now=None):
                 reasons.append("Limite de simulation atteinte.")
             from .leagues import EUROPE
 
-            if code in EUROPE:
-                reasons.append(
-                    "Coupe d’Europe : baseline exploratoire, validation spécifique encore absente."
-                )
             rows.append(
                 {
                     "division": code,
@@ -129,7 +125,9 @@ def selections(ws, period="today", league="all", query="", now=None):
                     "comparison": chosen,
                     "status": "abstention" if reasons else "candidate",
                     "reasons": reasons,
-                    "context_notice": "Avis des agents et compositions à vérifier ; non intégrés à la baseline.",
+                    "context_notice": "Avis des agents et compositions à vérifier ; non intégrés à la baseline."
+                    + (" Coupe d’Europe : baseline exploratoire, validation spécifique encore absente."
+                       if code in EUROPE else ""),
                     "synthetic": fixture["source"] == "synthetic-demo"
                     or any((r["source"] == "synthetic-demo" for r in history)),
                 }

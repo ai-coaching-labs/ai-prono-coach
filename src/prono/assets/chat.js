@@ -232,9 +232,9 @@ function updateControls() {
   ])
     control.disabled = busy;
   document.getElementById("manual-selection").hidden = !manualMode();
-  document.getElementById("manual-count").textContent = manualIds.size + " / 5 matchs choisis";
+  document.getElementById("manual-count").textContent = manualIds.size + " / 15 matchs choisis";
   for (const input of document.querySelectorAll("#manual-matches input"))
-    input.disabled = busy || matchesLoading || (!input.checked && manualIds.size >= 5);
+    input.disabled = busy || matchesLoading || (!input.checked && manualIds.size >= 15);
   match.disabled = busy || matchesLoading;
   selectionCount.disabled = busy || !!match.value;
   document.getElementById("prepare").disabled =

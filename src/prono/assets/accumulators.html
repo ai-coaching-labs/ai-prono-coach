@@ -1,0 +1,27 @@
+<!-- fragment: form -->
+<form method="get" action="/#content"><input type="hidden" name="tab" value="accumulators"><input type="hidden" name="league" value="{league}"><label>Budget fictif maximum <input name="budget" type="number" min="0" max="1000000" step="0.01" value="{budget}" required></label><label>Période <select name="horizon"><option value="today" {today}>Aujourd’hui</option><option value="next3" {next3}>Les trois prochains jours</option></select></label><label>Format <select name="format"><option value="auto" {auto}>Automatique · doubles et triples</option><option value="doubles" {doubles}>Doubles uniquement</option><option value="triples" {triples}>Triples uniquement</option></select></label><button type="submit">Proposer des combinés fictifs</button><p>Une unité fixe par ticket. Aucune dépense réelle. Les avis du coach doivent déjà être archivés.</p></form>
+<!-- /fragment -->
+<!-- fragment: result -->
+{feedback}<p>{notice}</p><details><summary>Comment les tickets sont choisis</summary><p>{method}</p></details><p><strong>{count} combiné(s) · {total} unités fictives proposées</strong> · Budget non utilisé : {unused}</p>{tickets}<details><summary>Exclusions et données indisponibles</summary><p>{risk_excluded} combinaison(s) écartée(s) par le critère de risque.</p><ul>{exclusions}</ul></details>
+<!-- /fragment -->
+<!-- fragment: ticket -->
+<article class="card"><h2>{kind} fictif {index}</h2><p><strong>{purpose}</strong></p><p>{warnings}</p><p>Bookmaker : {bookmaker} · Mise fictive : {stake} · Cote multipliée indicative : {odds}</p><p>{selection_reason}</p><ul>{legs}</ul><p>Probabilité théorique sous indépendance : {probability} % · Seuil de rentabilité : {threshold} %</p><p>Retour brut si gagné : {gross} · Gain net si gagné : {net} · Perte si perdu : {loss} unités fictives</p><p>Espérance nette théorique sous indépendance : {ev} unités fictives. Le bookmaker peut appliquer une cote de combiné différente.</p></article>
+<!-- /fragment -->
+<!-- fragment: leg -->
+<li><strong>{match} : {outcome}</strong> · Cote {odds} · Probabilité Poisson : {probability} % · Coup d’envoi {kickoff}<p>Coach : confiance {confidence}. {reason} Réserve : {reserve}</p><small>Avis du {coach_at} · Cote {quote_quality} : heure de cotation {quoted_at} · Collecte {collected_at}</small></li>
+<!-- /fragment -->
+<!-- fragment: empty -->
+<p>Aucun combiné admissible pour ce budget et ces données. Il faut au moins deux matchs distincts avec avis coach récent, données suffisantes et cotes valides du même bookmaker. Le budget peut rester entièrement inutilisé.</p>
+<!-- /fragment -->
+<!-- fragment: excluded -->
+<li><strong>{match}</strong> : {reasons}</li>
+<!-- /fragment -->
+<!-- fragment: ready -->
+<p>Saisis ton budget fictif, choisis la période et le format, puis clique sur « Proposer des combinés fictifs ». Le résultat et les éventuels blocages apparaîtront ici. Le bouton utilise les avis coach déjà archivés.</p>
+<!-- /fragment -->
+<!-- fragment: feedback -->
+<div role="status"><h2>{message}</h2><ul>{blockers}</ul>{actions}</div>
+<!-- /fragment -->
+<!-- fragment: actions -->
+<p><a href="{coach_url}">Ouvrir le coach pour consulter ou approfondir les avis</a></p><p>Tu peux aussi relancer l’équipe à l’étape 2. Les cotes indicatives sont acceptées en exploration, avec retours estimés ; elles ne valident aucune mise.</p>
+<!-- /fragment -->
